@@ -2,7 +2,7 @@
 export default {
 	router: {
 		home: '首页',
-		mainHead: 'Rayprus测试软件系统',
+		mainHead: '间接人力KPI系统',
 		basicData:'基础资料',
 		position:'站位',
 		machineType:'机台型号',

@@ -25,7 +25,7 @@
 				}}</el-button>
 				<el-button
 					@click="onOpentopBtnOther"
-					v-else
+					v-else-if="topbtn.isSure"
 					size="default"
 					class="ml10"
 					:color="topbtn.color"
@@ -47,6 +47,7 @@
 				<!-- <el-button @click="onExportTable" v-if="config.exportIcon" size="default" class="" type="primary" plain>{{
 					$t('message.tooltip.export')
 				}}</el-button> -->
+				<slot name="toolIcon"></slot>
 				<el-icon v-if="config.exportIcon" name="iconfont icon-btn-daochu" :size="22" :title="$t('message.tooltip.download')" @click="onExportTable"
 					><ele-Download
 				/></el-icon>
@@ -98,7 +99,7 @@
 		</div>
 		<el-table
 			ref="tableRef"
-			:height="config.height"
+			:height="config.height || 680"
 			id="elTable"
 			:class="!config.isDialogTab ? 'mt12' : ''"
 			:row-class-name="tableRowClassName"
@@ -118,8 +119,11 @@
 			:expand-row-keys="expandedRowKeys"
 			@expand-change="toggleRowExpansion"
 			@current-change="handleCurrentChange"
+			v-el-table-infinite-scroll="infiniteScroll"
+			:infinite-scroll-distance="10"
+			:infinite-scroll-disabled="infiniteScrollDisabled"
 		>
-			<el-table-column type="selection" :reserve-selection="true" width="30" v-if="config.isSelection" />
+			<el-table-column type="selection" :reserve-selection="true" width="40" v-if="config.isSelection" />
 			<el-table-column align="center" type="index" :index="indexMethod" :label="$t('message.pages.no')" width="70" v-if="config.isSerialNo" />
 			<el-table-column type="expand" v-if="config.expand">
 				<template #default="props">
@@ -127,7 +131,7 @@
 				</template>
 			</el-table-column>
 			<el-table-column
-				align="center"
+				:align="config.tableAlign || 'center'"
 				v-for="(item, index) in setHeader"
 				:key="index"
 				show-overflow-tooltip
@@ -171,22 +175,26 @@
 						</el-popover>
 
 						<!-- 输入框 :disabled="route.path == '/basics/warehouseManage' ? (data[scope.$index].disabled === false ? false : true) : false"-->
-						<el-input
-							:disabled="data[scope.$index][`${item.key}disabled`]"
-							:maxlength="item.maxlength"
-							v-if="item.type === 'input'"
-							style="height: 30px"
-							v-model="data[scope.$index][item.key]"
-							placeholder="請輸入"
-							clearable
-							@change="changedata(scope.$index, item.key)"
-							@input="inputdata"
-							@blur="inputBlur(scope.$index)"
-						></el-input>
+						<div style="text-align: center; overflow: hidden; text-overflow: ellipsis">
+							<el-input
+								:disabled="data[scope.$index][`${item.key}disabled`]"
+								:maxlength="item.maxlength"
+								v-if="scope.row.edit"
+								style="height: 30px"
+								v-model="data[scope.$index][item.key]"
+								placeholder="請輸入"
+								clearable
+								@change="changedata(scope.$index, item.key)"
+								@input="inputdata"
+								@blur="inputBlur(scope.row)"
+							></el-input>
+							<span style="white-space: nowrap" v-else-if="item.type === 'input'">{{ scope.row[item.key] }}</span>
+						</div>
+
 						<!-- 数字输入框 -->
 						<el-input-number
 							style="text-align: center; width: 100%; display: flex; justify-content: center"
-							v-else-if="item.type === 'number'"
+							v-if="item.type === 'number'"
 							v-model="data[scope.$index][item.key]"
 							:min="data[scope.$index][`${item.key}min`] || 0"
 							:max="data[scope.$index][`${item.key}max`]"
@@ -199,7 +207,7 @@
 							:debounce="500"
 							clearable
 							style="width: 100%"
-							v-else-if="item.type === 'autocomplete'"
+							v-if="item.type === 'autocomplete'"
 							v-model="data[scope.$index][item.key]"
 							:fetch-suggestions="querySearchAsync"
 							placeholder="請輸入"
@@ -209,7 +217,7 @@
 						<!-- 下拉框 -->
 						<el-select
 							style="width: 100% !important"
-							v-else-if="item.type === 'select'"
+							v-if="item.type === 'select'"
 							:clearable="item.clearable"
 							v-model="data[scope.$index][item.key]"
 							:filterable="item.isfilterable"
@@ -250,7 +258,7 @@
 						<!-- 状态 -->
 						<el-switch
 							:disabled="data[scope.$index][`${item.key}disabled`]"
-							v-else-if="item.type === 'status1'"
+							v-if="item.type === 'status1'"
 							v-model="data[scope.$index][item.key]"
 							:active-value="1"
 							:inactive-value="0"
@@ -263,7 +271,7 @@
 
 						<!-- 日期框 -->
 						<el-date-picker
-							v-else-if="item.type === 'time'"
+							v-if="item.type === 'time'"
 							value-format="YYYY-MM-DD"
 							v-model="data[scope.$index][item.key]"
 							type="date"
@@ -271,7 +279,7 @@
 							style="height: 30px; max-width: 167px"
 						/>
 
-						<span v-else-if="item.type === 'text'" style="text-align: center; width: 100%">
+						<span v-if="item.type === 'text'" style="text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">
 							{{ scope.row[item.key] }}
 						</span>
 					</el-form-item>
@@ -297,7 +305,11 @@
 					<span v-if="item.type === 'link'">
 						<a target="_blank" href="javascript:;" @click="clickLink(data[scope.$index][item.key + 'Link'])">{{ scope.row[item.key] }}</a>
 					</span>
-					<span v-if="!config.isInlineEditing && item.type === 'text'" style="text-align: center; width: 100%">
+					<span
+						v-if="!config.isInlineEditing && item.type === 'text'"
+						style="align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center"
+					>
+						<SvgIcon v-if="item.isTableIcon" :class="scope.row['tableIcon'] ? 'mr10' : ''" :name="scope.row['tableIcon']" />
 						{{ item.transfer ? $t(item.transfer[scope.row[item.key]]) : scope.row[item.key] }}
 					</span>
 					<slot v-if="item.type === 'slot'" name="column" :row="scope.row"></slot>
@@ -317,13 +329,20 @@
 			<el-table-column
 				prop="operation"
 				fixed="right"
-				align="right"
+				align="center"
 				header-align="center"
 				:label="$t('message.pages.operation')"
 				:width="config.operateWidth || 130"
 				v-if="config.isOperate"
 			>
 				<template v-slot="scope">
+					<!-- 行內編輯和保存 -->
+					<el-button v-if="!scope.row.edit && props.config.isInlineEditing" class="button" size="small" @click="handleEdit(scope.row)" type="success"
+						>编辑</el-button
+					>
+					<el-button v-if="scope.row.edit && props.config.isInlineEditing" class="button" size="small" @click="handleSave(scope)" type="primary"
+						>保存</el-button
+					>
 					<slot name="btn" :row="scope.row"></slot>
 					<template v-for="btn in btnConfig" :key="btn.type">
 						<el-button
@@ -386,9 +405,9 @@ import { useThemeConfig } from '/@/stores/themeConfig';
 const route = useRoute();
 import '/@/theme/tableTool.scss';
 import { useI18n } from 'vue-i18n';
+import { default as vElTableInfiniteScroll } from 'el-table-infinite-scroll';
 const tableRef = ref<RefType>();
 const pagination = ref<RefType>();
-const visible = ref(false);
 // 引入组件
 // const Dialog = defineAsyncComponent(() => import('/@/components/dialog/dialog.vue'));
 
@@ -396,6 +415,10 @@ const visible = ref(false);
 const props = defineProps({
 	// 列表内容
 	data: {
+		type: Array<EmptyObjectType>,
+		default: () => [],
+	},
+	tempTableData: {
 		type: Array<EmptyObjectType>,
 		default: () => [],
 	},
@@ -469,6 +492,7 @@ const emit = defineEmits([
 	'changeselect',
 	'inputData',
 	'inputBlur',
+	'handleSave',
 	'changeData',
 	'handleNumberInputChange',
 	'handlestatus1Change',
@@ -480,6 +504,7 @@ const emit = defineEmits([
 	'handleCurrentChange',
 	'selectFocus',
 	'selectBlur',
+	'onTableInfiniteScroll',
 ]);
 // 下拉框獲取焦點時
 const selectFocus = (scope: EmptyObjectType) => {
@@ -558,6 +583,19 @@ const onOpentopBtnOther = () => {
 const onOpenEdit = (type: string, row: Object, scope: EmptyArrayType) => {
 	emit('openAdd', type, row, scope);
 };
+// 行內編輯
+const handleEdit = (row) => {
+	row.edit = true;
+};
+// 行內保存
+const handleSave = (scope) => {
+	emit('handleSave', scope);
+};
+// 行內失去焦點
+const inputBlur = (row) => {
+	emit('inputBlur', row);
+};
+
 // 打开送样(其他)弹窗
 const onOpenOther = (scope: EmptyObjectType, type: string) => {
 	emit('onOpenOtherDialog', scope, type);
@@ -610,8 +648,26 @@ const onCheckChange = () => {
 };
 //为行设置独有key
 const selRowKey = (row: EmptyObjectType) => {
-	if (!props.config.isSelection && !props.config.expand) return;
-	return row.linecode || row.runid || row.publishId || row.matNo || row.reqNo || row.repairNo || row.idleno || row.uselessno || ' ';
+	// if (!props.config.isSelection && !props.config.expand) return 'id';
+	return row.id;
+};
+// el-table-infinite-scroll无限滚动组件
+const infiniteScrollDisabled = ref(false);
+const infiniteScroll = (res: any) => {
+	let page = 0;
+	let total = Math.ceil(props.config.total / 15);
+	if (total != 0) {
+		if (infiniteScrollDisabled.value) return;
+		page++;
+		if (page <= total && props.tempTableData.length > 15) {
+			let data = props.tempTableData.slice(page * 15, page * 15 + 15);
+			console.log(data);
+			emit('onTableInfiniteScroll', page, data);
+		}
+		if (page === total) {
+			infiniteScrollDisabled.value = true;
+		}
+	}
 };
 // 表格多选改变时，用于导出和删除
 const onSelectionChange = (val: EmptyObjectType[]) => {
@@ -747,9 +803,7 @@ const changedata = (index: number, key: string) => {
 const inputdata = (val: string) => {
 	emit('inputData', val);
 };
-const inputBlur = (index: number) => {
-	emit('inputBlur', index);
-};
+
 // 暴露变量
 defineExpose({
 	pageReset,
@@ -800,7 +854,18 @@ defineExpose({
 		background-color: var(--el-color-primary-light-9);
 		color: var(--el-text-color-primary);
 	}
+	// 行內編輯的行高跟bottom的距離
+	:deep(.el-form-item--large .el-form-item__content) {
+		line-height: unset;
+	}
+	:deep(.el-form-item--large) {
+		margin-bottom: 0;
+	}
+	:deep(.el-form-item) {
+		margin-bottom: 0;
+	}
 }
+
 :deep(.disabled-row) {
 	color: #ccc !important;
 	pointer-events: none !important;

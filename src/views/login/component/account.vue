@@ -4,7 +4,7 @@
 		<el-form-item class="login-animation1" prop="userName" :rules="[{ required: true, message: $t('message.account.worknoEmpty') }]">
 			<el-input text :placeholder="$t('message.account.accountPlaceholder1')" v-model="state.ruleForm.userName" clearable autocomplete="off">
 				<template #prefix>
-					<el-icon class="el-input__icon" color="#9EACF2" :size="20"><ele-Avatar /></el-icon>
+					<el-icon class="el-input__icon" color="#cccccc" :size="20"><ele-Avatar /></el-icon>
 				</template>
 			</el-input>
 		</el-form-item>
@@ -16,7 +16,7 @@
 				autocomplete="off"
 			>
 				<template #prefix>
-					<SvgIcon class="svgIcon" :size="13" color="#9EACF2" :name="'icon-Unlock'" />
+					<SvgIcon class="svgIcon" :size="13" color="#cccccc" :name="'icon-Unlock'" />
 					<!-- <el-icon class="el-input__icon" :size="20"><ele-Unlock /></el-icon> -->
 				</template>
 				<template #suffix>
@@ -36,7 +36,7 @@
 		<el-form-item class="login-animation3">
 			<!-- 记住密码和忘记密码 -->
 			<div class="pwd-container">
-				<el-checkbox>{{ $t('message.account.remember') }}</el-checkbox>
+				<el-checkbox class="rem-container" style="color: var(--next-color-white)">{{ $t('message.account.remember') }}</el-checkbox>
 				<span class="forpwd" @click="forgetPwd">{{ $t('message.account.forget') }}</span>
 			</div>
 		</el-form-item>
@@ -218,11 +218,21 @@ onUnmounted(() => {
 	font-size: 24px !important;
 }
 .title {
-	color: #0047c5;
-	font-size: 30px;
+	color: var(--next-color-white);
+	font-size: 28px;
 	font-family: Microsoft YaHei;
-	margin: 73px 0px 39px 0px;
-	text-align: center;
+	padding: 54px 95px 32px 17px;
+	position: relative;
+}
+.title:after {
+	content: '';
+	width: 95px;
+	height: 5px;
+	background: var(--el-color-primary);
+	position: absolute;
+	top: 97px;
+	border-radius: 5px;
+	left: 27px;
 }
 .login-animation1 {
 	margin-bottom: 28px;
@@ -256,20 +266,21 @@ onUnmounted(() => {
 	.login-content-submit {
 		width: 100%;
 		letter-spacing: 23px;
-		font-weight: 600;
 		margin-top: 15px;
 		height: 50px;
-		background: #6077ef;
+		background: var(--el-color-primary);
+		border-radius: 30px;
 		// background: linear-gradient(170deg, #2d6dcd, #33a1ff, #33cbff);
 		box-shadow: 0px 3px 7px 0px rgba(16, 92, 138, 0.35);
 		border: 0px;
 		span {
 			width: 100%;
 			padding-left: 20px;
-			font-size: 30px;
+			font-size: 20px;
 		}
 	}
 	.pwd-container {
+		color: var(--next-color-white);
 		width: 100%;
 		padding: 10px 20px 0px;
 		.forpwd {
@@ -277,7 +288,7 @@ onUnmounted(() => {
 			cursor: pointer;
 			font-size: 14px;
 			&:hover {
-				color: #324bca;
+				color: var(--el-color-primary);
 			}
 		}
 	}
@@ -285,13 +296,9 @@ onUnmounted(() => {
 		font-size: 16px;
 	}
 	:deep(.el-input__wrapper) {
-		// border-top: 0px;
-		// border-right: 0px;
-		// border-left: 0px;
 		border: 1px solid #95a4ef;
-		border-radius: 5px;
+		border-radius: 20px;
 		box-shadow: 0 0 0 0px;
-		// height: 93px;
 	}
 	:deep(.el-input__inner) {
 		margin-left: 20px;

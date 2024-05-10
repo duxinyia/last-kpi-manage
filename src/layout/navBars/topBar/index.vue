@@ -102,6 +102,6 @@ onUnmounted(() => {
 	display: flex;
 	align-items: center;
 	background: var(--next-bg-topBar);
-	// border-bottom: 1px solid var(--next-border-color-light);
+	border-bottom: 1px solid var(--next-border-color-light);
 }
 </style>

@@ -2,7 +2,7 @@
 export default {
 	router: {
 		home: 'home page',
-		mainHead: 'Rayprus test software system',
+		mainHead: 'Indirect manpower KPI system',
 		basicData:'basic data',
 		position:'position',
 		machineType:'machine type',

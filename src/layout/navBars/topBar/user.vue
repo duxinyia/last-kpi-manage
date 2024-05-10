@@ -22,7 +22,7 @@
 		</div>
 		<el-dropdown :show-timeout="70" :hide-timeout="50" trigger="click" @command="onLanguageChange">
 			<div class="layout-navbars-breadcrumb-user-icon" :title="$t('message.user.title1')">
-				<SvgIcon class="svgIcon" :size="0" color="'#fff'" :name="state.disabledI18n === 'en' ? 'icon-yingwen' : 'icon-zhongwen'" />
+				<SvgIcon class="svgIcon" :size="0" color="#000" :name="state.disabledI18n === 'en' ? 'icon-yingwen' : 'icon-zhongwen'" />
 				<!-- <i class="iconfont" :class="state.disabledI18n === 'en' ? 'icon-fuhao-yingwen' : 'icon-zhongwen'" :title="$t('message.user.title1')"></i> -->
 			</div>
 			<template #dropdown>

@@ -598,7 +598,8 @@ watch(
 
 <style scoped lang="scss">
 .layout-navbars-tagsview {
-	background-color: var(--el-color-primary-light-6);
+	// background-color: var(--el-color-primary-light-6);
+	background-color: var(--el-color-white);
 	border-bottom: 1px solid var(--next-border-color-light);
 	position: relative;
 	z-index: 4;

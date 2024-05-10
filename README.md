@@ -28,7 +28,7 @@
 git clone
 
 # 进入项目
-cd test-software-manage
+cd kpi-manage
 
 # 安装依赖
 cnpm install

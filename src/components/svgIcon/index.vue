@@ -46,7 +46,7 @@ const props = defineProps({
 	},
 	height: {
 		type: String,
-		default: '16px',
+		default: '15px',
 	},
 });
 const linesString = ['https', 'http', '/src', '/src/assets/', 'data:image', import.meta.env.VITE_PUBLIC_PATH];

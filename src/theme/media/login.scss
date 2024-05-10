@@ -4,21 +4,27 @@
 ------------------------------- */
 @media screen and (max-width: $lg) and (min-width: $xs) {
 	.main-login{
-		.fly{
-			display: none;
-		}
-		background-color: #004ac3;
+		background-color: var(--el-color-primary);
 		.login-container {
 			display: none;
 		}
 		.login-bottom {
-			left: 50%!important;
+			left: 10%!important;
+			top: 52%!important;
+			// transform: translateX(-50%)!important;
 		}
 		.login-content-submit{
 			margin-top: 17px!important;
 		}
 		.login-right-warp-main-title {
 			margin-left: -264px!important;
+		}
+		.login-right-warp-main-title  {
+			font-size: 50px!important;
+			top: 15%!important;
+	    left: 50%!important;
+			line-height: 80px!important;
+			text-align: center!important;
 		}
 	}
 
@@ -29,9 +35,7 @@
 @media screen and (max-width: $xs) {
 	.main-login{
 		background-color: var(--next-color-white)	;
-		.fly{
-			display: none;
-		}
+		
 		.login-top{
 			display: none;
 		}
@@ -39,12 +43,16 @@
 			display: none;
 		}
 		.login-right-warp-main-title {
-			font-size: 40px!important;
-			color: #0047c5!important;
+			font-size: 35px!important;
+			color: var(--el-color-primary)!important;
 			margin-left: -192px!important;
+			top: 15%!important;
+	    left: 50%!important;
+			line-height: 80px!important;
+			text-align: center!important;
 		}
 		.login-bottom {
-			left: 50%!important;
+			left: 5%!important;
 			top: 46%!important;
 			width: 100% !important;
 			.login-right-warp {
@@ -72,16 +80,15 @@
 		}
 		
 	}
+	.title,.pwd-container,.rem-container{
+		color: #000 !important;
+	}
 }
 
 /* 页面宽度小于375px
 ------------------------------- */
 @media screen and (max-width: $us) {
-	.main-login{
-		.fly{
-			display: none;
-		}
-	}
+
 	.main-login{
 		.login-right-warp-main-title {
 			font-size: 25px !important;

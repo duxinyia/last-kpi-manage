@@ -54,6 +54,7 @@ declare type DialogConfigType = {
 declare type TableDemoState = {
 	tableData: {
 		data: EmptyObjectType[];
+		tempTableData:EmptyObjectType[];
 		header: TableHeaderType[];
 		config: {
 			total: number;

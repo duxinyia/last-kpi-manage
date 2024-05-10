@@ -406,54 +406,15 @@ export const staticRoutes: Array<RouteRecordRaw> = [
 		},
 	},
 	// 链接
-	{
-		path: '/link/programReleaseLink',
-		name: 'programReleaseLink',
-		component: () => import('/@/views/link/programReleaseLink/index.vue'),
-		meta: {
-			title: '程式發佈详情',
-		},
-	},
-	{
-		path: '/link/kanbanBoardLink',
-		name: 'kanbanBoardLink',
-		component: () => import('/@/views/link/kanbanBoardLink/index.vue'),
-		meta: {
-			title: '平臺看板',
-		},
-	},
 	// {
-	// 	path: '/link/noSearchLink',
-	// 	name: 'noSearchLink',
-	// 	component: () => import('/@/views/link/noSearchLink/index.vue'),
+	// 	path: '/link/programReleaseLink',
+	// 	name: 'programReleaseLink',
+	// 	component: () => import('/@/views/link/programReleaseLink/index.vue'),
 	// 	meta: {
-	// 		title: '料号详情',
+	// 		title: '程式發佈详情',
 	// 	},
 	// },
-	// {
-	// 	path: '/link/arrivalAcceptanceLink',
-	// 	name: 'arrivalAcceptanceLink',
-	// 	component: () => import('/@/views/link/arrivalAcceptanceLink/index.vue'),
-	// 	meta: {
-	// 		title: '驗收單详情',
-	// 	},
-	// },
-	// {
-	// 	path: '/link/idleInquiryLink',
-	// 	name: 'idleInquiryLink',
-	// 	component: () => import('/@/views/link/idleInquiryLink/index.vue'),
-	// 	meta: {
-	// 		title: '閒置單详情',
-	// 	},
-	// },
-	// {
-	// 	path: '/link/scrapBillQueryLink',
-	// 	name: 'scrapBillQueryLink',
-	// 	component: () => import('/@/views/link/scrapBillQueryLink/index.vue'),
-	// 	meta: {
-	// 		title: '報廢單详情',
-	// 	},
-	// },
+
 	// {
 	// 	path: '/link/404',
 	// 	name: '404',

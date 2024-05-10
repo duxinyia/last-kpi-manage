@@ -10,13 +10,9 @@
 		</div>
 		<!-- 字體 -->
 		<div class="login-right-warp-main-title">
-			{{ $t(getThemeConfig.globalTitle) }}
+			<div>Welcome TO</div>
+			<div>{{ $t(getThemeConfig.globalTitle) }}</div>
 		</div>
-		<div class="fly bg-fly-circle1"></div>
-		<div class="fly bg-fly-circle2"></div>
-		<div class="fly bg-fly-circle3"></div>
-		<div class="fly bg-fly-circle4"></div>
-		<div class="login-light"></div>
 		<div class="login-bottom">
 			<div class="login-right-warp flex-margin">
 				<div class="login-right-warp-mian">
@@ -28,6 +24,7 @@
 				</div>
 			</div>
 		</div>
+
 		<!-- 底部描述框 -->
 		<transition
 			appear
@@ -44,10 +41,10 @@
 				<div class="author-info">
 					<div>
 						<span class="author">
-							<el-icon class="icon"><ele-UserFilled /></el-icon>劉進/37500
+							<el-icon class="icon"><ele-UserFilled /></el-icon>陸煥麗/64614
 						</span>
 						<span class="mail">
-							<el-icon class="icon"><ele-Message /></el-icon>rein.j.liu@mail.foxconn.com
+							<el-icon class="icon"><ele-Message /></el-icon>wwlh-mis-web@mail.foxconn.com
 						</span>
 						&nbsp;&nbsp;
 						<span class="author">
@@ -100,6 +97,7 @@ onMounted(() => {
 }
 .login-container {
 	height: 100%;
+	width: 100%;
 	background: url('../../assets/images/login-page.png') no-repeat center;
 	position: relative;
 	// background-size: 100% 100%;
@@ -125,43 +123,29 @@ onMounted(() => {
 		right: -100px;
 	}
 }
-.login-light {
-	position: absolute;
-	top: 183px;
-	left: 50%;
-	width: 548px;
-	height: 2px;
-	margin-left: -240px;
-	background: linear-gradient(244deg, rgba(255, 255, 255, 0) 0%, rgba(41, 209, 253) 50%, rgba(255, 255, 255, 0) 100%);
-}
 .login-right-warp-main-title {
 	position: absolute;
-	top: 57px;
-	left: 50%;
+	top: 35%;
+	left: 20%;
+	transform: translateY(-50%);
 	margin-left: -264px;
 	color: #fff;
 	height: 130px;
 	line-height: 130px;
 	font-size: 60px;
-	text-align: center;
+	// text-align: center;
 	// letter-spacing: 3px;
 	animation: logoAnimation 0.3s ease;
 	animation-delay: 0.3s;
-	// color: var(--el-text-color-primary);
-	// 	&::after {
-	// 		content: '';
-	// 		width: 250px;
-	// 		position: absolute;
-	// 		bottom: -15px;
-	// 		left: 50%;
-	// 		transform: translateX(-50%);
-	// 		border: 1px transparent solid;
+	font-family: YouYuan;
+	font-weight: 600;
+	letter-spacing: 10px;
 }
 .login-bottom {
 	position: absolute;
-	top: 49%;
-	left: 52%;
-	transform: translate(-50%, -50%);
+	top: 42%;
+	right: 15%;
+	transform: translateY(-50%);
 	.login-bottom-img {
 		// position: absolute;
 		// top: 50%;
@@ -176,14 +160,15 @@ onMounted(() => {
 		}
 	}
 	.login-right-warp {
-		// border: 1px solid var(--el-color-primary-light-3);
+		// border: 1px solid var(--el-color-primary-light-3);#e8f2fd
 		border-radius: 3px;
 		width: 470px;
 		height: 468px;
 		position: relative;
 		margin-top: 10%;
 		overflow: hidden;
-		background-color: #e8f2fd;
+		background-color: rgba(255, 255, 255, 0.7);
+		border-radius: 30px;
 		.login-right-warp-mian {
 			display: flex;
 			flex-direction: column;
@@ -255,64 +240,6 @@ onMounted(() => {
 		.author {
 			margin-right: 10px;
 		}
-	}
-}
-.fly {
-	pointer-events: none;
-	position: absolute;
-	z-index: 9999;
-}
-.bg-fly-circle1 {
-	left: 40px;
-	top: 100px;
-	width: 100px;
-	height: 100px;
-	border-radius: 50%;
-	background: linear-gradient(to right, rgb(196, 224, 250) 0%, rgba(rgb(196, 224, 250), 0.04) 100%);
-	animation: move 2.5s linear infinite;
-}
-
-.bg-fly-circle2 {
-	left: 15%;
-	bottom: 5%;
-	width: 150px;
-	height: 150px;
-	border-radius: 50%;
-	background: linear-gradient(to right, rgb(196, 224, 250) 0%, rgba(rgb(196, 224, 250), 0.04) 100%);
-	animation: move 3s linear infinite;
-}
-
-.bg-fly-circle3 {
-	right: 20%;
-	top: 140px;
-	width: 145px;
-	height: 145px;
-	border-radius: 50%;
-	background: linear-gradient(to right, rgb(196, 224, 250) 0%, rgba(rgb(196, 224, 250), 0.04) 100%);
-	animation: move 2.5s linear infinite;
-}
-
-.bg-fly-circle4 {
-	right: 5%;
-	top: 60%;
-	width: 160px;
-	height: 160px;
-	border-radius: 50%;
-	background: linear-gradient(to right, rgb(196, 224, 250) 0%, rgba(rgb(196, 224, 250), 0.04) 100%);
-	animation: move 3.5s linear infinite;
-}
-
-@keyframes move {
-	0% {
-		transform: translateY(0px) scale(1);
-	}
-
-	50% {
-		transform: translateY(25px) scale(1.1);
-	}
-
-	100% {
-		transform: translateY(0px) scale(1);
 	}
 }
 </style>

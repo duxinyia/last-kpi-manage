@@ -1,3 +1,3 @@
 window.webConfig = {
-	webApiBaseUrl: 'http://10.151.130.110:8080',
+	webApiBaseUrl: 'http://10.143.4.104:8096',
 };
