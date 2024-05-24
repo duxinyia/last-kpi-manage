@@ -24,7 +24,7 @@
 					$t('message.tooltip.export')
 				}}</el-button>
 				<el-button
-					@click="onOpentopBtnOther"
+					@click="onOpentopBtnOther(topbtn.type)"
 					v-else-if="topbtn.isSure"
 					size="default"
 					class="ml10"
@@ -48,6 +48,14 @@
 					$t('message.tooltip.export')
 				}}</el-button> -->
 				<slot name="toolIcon"></slot>
+				<el-icon
+					v-if="config.exportIcon && !config.isHidenExportIcon"
+					name="iconfont icon-btn-daochu"
+					:size="22"
+					:title="$t('上傳')"
+					@click="onImportTable('imp')"
+					><ele-Upload
+				/></el-icon>
 				<el-icon v-if="config.exportIcon" name="iconfont icon-btn-daochu" :size="22" :title="$t('message.tooltip.download')" @click="onExportTable"
 					><ele-Download
 				/></el-icon>
@@ -97,9 +105,10 @@
 				</el-popover>
 			</div>
 		</div>
+		<!-- v-if="menuTable" -->
 		<el-table
 			ref="tableRef"
-			:height="config.height || 680"
+			:height="config.height || 740"
 			id="elTable"
 			:class="!config.isDialogTab ? 'mt12' : ''"
 			:row-class-name="tableRowClassName"
@@ -122,6 +131,13 @@
 			v-el-table-infinite-scroll="infiniteScroll"
 			:infinite-scroll-distance="10"
 			:infinite-scroll-disabled="infiniteScrollDisabled"
+			:show-summary="config.isShowSummary"
+			:summary-method="getSummaries"
+			:highlight-current-row="config.highlightCurrentRow"
+			:lazy="config.lazy"
+			:load="load"
+			:default-expand-all="config.defaultExpandAll || true"
+			:tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
 		>
 			<el-table-column type="selection" :reserve-selection="true" width="40" v-if="config.isSelection" />
 			<el-table-column align="center" type="index" :index="indexMethod" :label="$t('message.pages.no')" width="70" v-if="config.isSerialNo" />
@@ -135,6 +151,7 @@
 				v-for="(item, index) in setHeader"
 				:key="index"
 				show-overflow-tooltip
+				:fixed="item.fixed"
 				:prop="item.key"
 				:width="item.colWidth"
 				:label="$t(item.title)"
@@ -283,6 +300,16 @@
 							{{ scope.row[item.key] }}
 						</span>
 					</el-form-item>
+					<el-table-column v-for="child in item.childrenHeader" :key="child.key" :prop="child.key" :label="child.title" width="90" align="center">
+						<template v-slot="scope">
+							<span
+								v-if="child.type === 'text'"
+								style="align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center"
+							>
+								{{ scope.row[child.key] }}
+							</span>
+						</template>
+					</el-table-column>
 					<!-- 不能行内编辑 -->
 					<template v-if="item.type === 'status'" style="text-align: center; width: 100%">
 						<el-tag type="success" v-if="scope.row.runstatus === 1">啟用</el-tag>
@@ -306,11 +333,18 @@
 						<a target="_blank" href="javascript:;" @click="clickLink(data[scope.$index][item.key + 'Link'])">{{ scope.row[item.key] }}</a>
 					</span>
 					<span
+						v-if="!config.isInlineEditing && item.type === 'tooltipText'"
+						style="align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center"
+					>
+						<SvgIcon v-if="item.isTableIcon" :class="scope.row['tableIcon'] ? 'mr5' : ''" :name="scope.row['tableIcon']" />
+						{{ scope.row[item.key] }}
+					</span>
+					<span
 						v-if="!config.isInlineEditing && item.type === 'text'"
 						style="align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center"
 					>
-						<SvgIcon v-if="item.isTableIcon" :class="scope.row['tableIcon'] ? 'mr10' : ''" :name="scope.row['tableIcon']" />
-						{{ item.transfer ? $t(item.transfer[scope.row[item.key]]) : scope.row[item.key] }}
+						<!-- <SvgIcon v-if="item.isTableIcon" :class="scope.row['tableIcon'] ? 'mr5' : ''" :name="scope.row['tableIcon']" /> -->
+						{{ item.transfer ? item.transfer[scope.row[item.key]] : scope.row[item.key] }}
 					</span>
 					<slot v-if="item.type === 'slot'" name="column" :row="scope.row"></slot>
 				</template>
@@ -348,7 +382,7 @@
 						<el-button
 							style="color: #fff"
 							:disabled="scope.row[btn.type + 'Disabled']"
-							v-if="!btn.isSure && !scope.row[btn.type + 'IsShow']"
+							v-if="!btn.isSure && !scope.row[btn.type + 'IsShow'] && btn.type !== 'del'"
 							@click="btn.type === 'edit' ? onOpenEdit(btn.type, scope.row, scope) : onOpenOther(scope, btn.type)"
 							:color="btn.color"
 							size="small"
@@ -366,11 +400,12 @@
 							:color="btn.color"
 							:type="btn.defaultColor"
 							size="small"
-							><el-icon v-if="btn.icon" class="btn.icon ? 'mr5' : ''"><ele-Delete /></el-icon>{{ $t(btn.name) }}</el-button
+							><el-icon v-if="btn.icon" :class="btn.icon ? 'mr5' : ''"><ele-Delete /></el-icon>{{ $t(btn.name) }}</el-button
 						>
 					</template>
 				</template>
 			</el-table-column>
+
 			<template #empty>
 				<el-empty :description="$t('message.hint.nodata')" />
 			</template>
@@ -395,7 +430,7 @@
 </template>
 
 <script setup lang="ts" name="netxTable">
-import { reactive, computed, nextTick, ref, defineAsyncComponent, onMounted, watch } from 'vue';
+import { reactive, computed, nextTick, ref, defineAsyncComponent, onMounted, watch, h } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import printJs from 'print-js';
@@ -407,7 +442,9 @@ import '/@/theme/tableTool.scss';
 import { useI18n } from 'vue-i18n';
 import { default as vElTableInfiniteScroll } from 'el-table-infinite-scroll';
 const tableRef = ref<RefType>();
+const menuTable = ref();
 const pagination = ref<RefType>();
+const infiniteScrollDisabled = ref(false);
 // 引入组件
 // const Dialog = defineAsyncComponent(() => import('/@/components/dialog/dialog.vue'));
 
@@ -505,7 +542,38 @@ const emit = defineEmits([
 	'selectFocus',
 	'selectBlur',
 	'onTableInfiniteScroll',
+	'exportTable',
+	'getSummaries',
+	'load',
 ]);
+// watch(
+// 	() => props.data,
+// 	() => {
+// 		menuTable.value = false;
+// 		nextTick(() => {
+// 			menuTable.value = true;
+// 		});
+// 	},
+// 	{
+// 		immediate: true,
+// 	}
+// );
+let contractId = ref<any>();
+const loadMap = new Map();
+const load = (row: any, treeNode: unknown, resolve: (date: any) => void) => {
+	setTimeout(() => {
+		resolve(row.details);
+	}, 1000);
+	// 父节点id
+	contractId.value = row.deptCode; //存储父节点,方便子节点做局部刷新功能
+	loadMap.set(row.deptCode, { row, treeNode, resolve });
+};
+// 合計
+const getSummaries = (param: EmptyObjectType) => {
+	let sums: string[] = [];
+	emit('getSummaries', param, sums);
+	return sums;
+};
 // 下拉框獲取焦點時
 const selectFocus = (scope: EmptyObjectType) => {
 	emit('selectFocus', scope);
@@ -519,7 +587,7 @@ const rowClick = (row: Object, column: Object) => {
 	emit('rowClick', row, column);
 };
 const toggleRowExpansion = (row: any, column: Object, expanded: any) => {
-	emit('toggleRowExpansion', row, column);
+	emit('toggleRowExpansion', row, column, expanded, contractId.value, loadMap);
 };
 const remoteMethod = (index: number, query: string, item: EmptyObjectType) => {
 	emit('remoteMethod', index, query, item);
@@ -576,29 +644,29 @@ const onOpenAdd = (type: string) => {
 	emit('openAdd', type);
 };
 // 打开其他弹窗
-const onOpentopBtnOther = () => {
-	emit('onOpentopBtnOther', state.selectlist);
+const onOpentopBtnOther = (type: string) => {
+	emit('onOpentopBtnOther', state.selectlist, type);
 };
 // 打开修改弹窗
 const onOpenEdit = (type: string, row: Object, scope: EmptyArrayType) => {
 	emit('openAdd', type, row, scope);
 };
 // 行內編輯
-const handleEdit = (row) => {
+const handleEdit = (row: EmptyObjectType) => {
 	row.edit = true;
 };
 // 行內保存
-const handleSave = (scope) => {
+const handleSave = (scope: EmptyObjectType) => {
 	emit('handleSave', scope);
 };
 // 行內失去焦點
-const inputBlur = (row) => {
+const inputBlur = (row: EmptyObjectType) => {
 	emit('inputBlur', row);
 };
 
 // 打开送样(其他)弹窗
 const onOpenOther = (scope: EmptyObjectType, type: string) => {
-	emit('onOpenOtherDialog', scope, type);
+	emit('onOpenOtherDialog', scope, type, tableRef.value);
 };
 // 打开导入弹窗
 const onImportTable = (type: string) => {
@@ -649,26 +717,27 @@ const onCheckChange = () => {
 //为行设置独有key
 const selRowKey = (row: EmptyObjectType) => {
 	// if (!props.config.isSelection && !props.config.expand) return 'id';
-	return row.id;
+	return row.deptCode || row.orderid || row.id;
 };
 // el-table-infinite-scroll无限滚动组件
-const infiniteScrollDisabled = ref(false);
-const infiniteScroll = (res: any) => {
-	let page = 0;
+let page = ref(0);
+
+const infiniteScroll = () => {
 	let total = Math.ceil(props.config.total / 15);
 	if (total != 0) {
 		if (infiniteScrollDisabled.value) return;
-		page++;
-		if (page <= total && props.tempTableData.length > 15) {
-			let data = props.tempTableData.slice(page * 15, page * 15 + 15);
-			console.log(data);
-			emit('onTableInfiniteScroll', page, data);
+		page.value++;
+		if (page.value <= total && props.tempTableData.length > 15) {
+			let data = props.tempTableData.slice(page.value * 15, page.value * 15 + 15);
+
+			emit('onTableInfiniteScroll', page.value, data);
 		}
-		if (page === total) {
+		if (page.value === total) {
 			infiniteScrollDisabled.value = true;
 		}
 	}
 };
+
 // 表格多选改变时，用于导出和删除
 const onSelectionChange = (val: EmptyObjectType[]) => {
 	state.selectlist = val;
@@ -712,8 +781,13 @@ const onHandleCurrentChange = (val: number) => {
 // 搜索时，分页还原成默认
 const pageReset = () => {
 	state.page.pageNum = 1;
-	state.page.pageSize = 10;
+	state.page.pageSize = props.config.isPage ? 10 : 10000;
 	emit('pageChange', state.page);
+};
+// 还原虚拟列表数据
+const infiniteScrollReset = () => {
+	page.value = 0;
+	infiniteScrollDisabled.value = false;
 };
 // 清空用户选择的表格行
 const clearSelection = () => {
@@ -761,7 +835,7 @@ const onExportTable = () => {
 	props.header.forEach((item) => {
 		item.title = t(item.title);
 	});
-	emit('importTable', state.selectlist);
+	emit('exportTable', state.selectlist);
 };
 
 // 导入表格
@@ -809,6 +883,8 @@ defineExpose({
 	pageReset,
 	clearSelection,
 	setScrollTop,
+	infiniteScrollReset,
+	load,
 });
 </script>
 

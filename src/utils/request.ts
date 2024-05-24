@@ -108,14 +108,14 @@ service.interceptors.response.use(
 		return Promise.reject(error);
 	}
 );
-const checkResponse =(config:any) =>{
+const checkResponse =(config:any) =>{	
 	//刷新token
 	if (!config.headers) {
-			if (config.getResponseHeader("Token_Exp") == "1") {
+			if (config.getResponseHeader("token_exp") == "1") {
 					replaceToken();
 			}
 	}
-	else if (config.headers.Token_Exp== "1") {
+	else if (config.headers.token_exp== "1") {
 			replaceToken();
 	}
 }

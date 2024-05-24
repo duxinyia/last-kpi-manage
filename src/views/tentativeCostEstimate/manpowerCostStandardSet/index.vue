@@ -1,6 +1,7 @@
 <template>
 	<div class="table-container layout-padding">
 		<div class="table-padding layout-padding-view layout-padding-auto">
+			<!-- <TableSearch :labelWidth="' '" :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" /> -->
 			<el-form ref="formRef" :model="state.tableData">
 				<Table
 					ref="tableRef"
@@ -9,6 +10,8 @@
 					@sortHeader="onSortHeader"
 					@onTableInfiniteScroll="tableInfiniteScroll"
 					@openAdd="openDialog"
+					@pageChange="onTablePageChange"
+					@delRow="onTableDelRow"
 				>
 				</Table>
 			</el-form>
@@ -23,6 +26,12 @@
 import { defineAsyncComponent, reactive, ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
+import {
+	getLaborcoststandardsApi,
+	postLaborcostAddApi,
+	postLaborcostDeleteApi,
+	postLaborcostUpdateApi,
+} from '/@/api/tentativeCostEstimate/manpowerCostStandardSet';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const TableSearch = defineAsyncComponent(() => import('/@/components/search/search.vue'));
@@ -39,25 +48,12 @@ const loadingBtn = ref(false);
 const state = reactive<TableDemoState>({
 	tableData: {
 		// 列表数据（必传）
-		data: [
-			{
-				types: '陸干師級煩啥刮痧剛發的歸屬感廣東省廣東省管發多少根深蒂固梵蒂岡電飯鍋的給對方咕嘟咕嘟發給',
-				kntd: '40',
-			},
-			{
-				types: '臺外干',
-				kntd: '75',
-			},
-			{
-				types: '陸干員級',
-				kntd: '25',
-			},
-		],
+		data: [],
 		tempTableData: [],
 		// 表头内容（必传，注意格式）
 		header: [
-			{ key: 'types', colWidth: '', title: '人員類別', type: 'text', isCheck: true, isTableIcon: true, isRequired: true },
-			{ key: 'kntd', colWidth: '', title: '月薪資(KNTD)', type: 'text', isCheck: true },
+			{ key: 'identitytype', colWidth: '', title: '人員類別', type: 'text', isCheck: true, isTableIcon: true, isRequired: true },
+			{ key: 'monsalary', colWidth: '', title: '月薪資(KNTD)', type: 'text', isCheck: true },
 		],
 		// 配置项（必传）
 		config: {
@@ -67,28 +63,34 @@ const state = reactive<TableDemoState>({
 			isSerialNo: true, // 是否显示表格序号
 			isSelection: false, // 是否显示表格多选
 			isOperate: true, // 是否显示表格操作栏
-			isButton: false, //是否显示表格上面的新增删除按钮
+			isButton: true, //是否显示表格上面的新增删除按钮
 			isInlineEditing: false, //是否是行内编辑
 			isTopTool: true, //是否有表格右上角工具
 			isPage: false, //是否有分页
-			operateWidth: 130, //操作栏宽度，如果操作栏有几个按钮就自己定宽度
+			operateWidth: 200, //操作栏宽度，如果操作栏有几个按钮就自己定宽度
 			// tableAlign: 'left',
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
-		search: [],
+		search: [
+			{ label: '人員類別', prop: 'Identitytype', required: false, type: 'input', placeholder: '' },
+			{ label: '月薪資(KNTD)', prop: 'Monsalary', required: false, type: 'input', placeholder: '' },
+		],
 		searchConfig: {
-			// isSearchBtn: true,
+			isSearchBtn: true,
 		},
-		btnConfig: [{ type: 'edit', name: 'message.allButton.edit', isSure: false, color: '#438df5', icon: 'ele-Edit' }],
+		topBtnConfig: [{ type: 'add', name: '新增', defaultColor: 'primary', isSure: true, disabled: true }],
+		btnConfig: [
+			{ type: 'edit', name: 'message.allButton.edit', isSure: false, color: '#438df5', icon: 'ele-Edit' },
+			{ type: 'del', name: 'message.allButton.deleteBtn', isSure: false, defaultColor: 'danger', icon: 'ele-Delete' },
+		],
 		// 弹窗表单
 		dialogConfig: [
 			{
 				label: '人員類別',
-				prop: 'types',
+				prop: 'identitytype',
 				placeholder: '',
 				required: true,
 				type: 'input',
-				standbyType: 'input',
 				xs: 24,
 				sm: 24,
 				md: 24,
@@ -98,11 +100,10 @@ const state = reactive<TableDemoState>({
 			},
 			{
 				label: '月薪資(KNTD)',
-				prop: 'kntd',
+				prop: 'monsalary',
 				placeholder: '',
 				required: true,
-				type: 'input',
-				standbyType: 'input',
+				type: 'number',
 				xs: 24,
 				sm: 24,
 				md: 24,
@@ -127,44 +128,50 @@ const state = reactive<TableDemoState>({
 });
 // 初始化列表数据
 const getTableData = async () => {
-	// state.tableData.config.loading = true;
-	// const form = state.tableData.form;
-	// let data: EmptyObjectType = {};
-	// data = {
-	// 	...form,
-	// 	page: state.tableData.page,
-	// };
-	// const res = await getQueryApplyCheckInventoryApi(data);
-	state.tableData.tempTableData = state.tableData.data;
-	state.tableData.data = state.tableData.data.slice(0, 15);
-
-	state.tableData.config.total = state.tableData.data.length;
-	// if (res.status) {
-	state.tableData.config.loading = false;
-	// }
+	state.tableData.config.loading = true;
+	const form = state.tableData.form;
+	let data: EmptyObjectType = {};
+	data = {
+		...form,
+		// page: state.tableData.page,
+	};
+	const res = await getLaborcoststandardsApi(data);
+	state.tableData.tempTableData = res.data;
+	state.tableData.data = res.data.slice(0, 15);
+	state.tableData.config.total = res.data.length;
+	if (res.status) {
+		state.tableData.config.loading = false;
+	}
+	tableRef.value?.infiniteScrollReset();
 };
 // 觸底
-const tableInfiniteScroll = (page, data) => {
+const tableInfiniteScroll = (page: number, data: EmptyObjectType) => {
 	state.tableData.data = state.tableData.data.concat(data);
 };
 // 打开編輯弹窗
 const openDialog = async (type: string, row: EmptyObjectType) => {
-	corsDialogRef.value.openDialog(type, row, '信息');
+	corsDialogRef.value.openDialog(type, row, '');
 };
-//修改數據
+//修改和新增數據
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	loadingBtn.value = true;
-	// const editData = { line: ruleForm.line, lineStationMachines: lineDialogState.tableData.data };
-	// const res = type === 'add' ? await postLineAddLineApi(editData) : await putLineUpdateLineApi({ ...editData, lineCode: ruleForm.linecode });
-	// if (res.status) {
-	// 	type === 'add' ? ElMessage.success(t(`message.hint.addSuccess`)) : ElMessage.success(t(`message.hint.modifiedSuccess`));
-	// 	stationDialogRef.value.closeDialog();
-	// 	getTableData();
-	// }
+	const res = type === 'add' ? await postLaborcostAddApi(ruleForm) : await postLaborcostUpdateApi(ruleForm);
+	if (res.status) {
+		type === 'add' ? ElMessage.success(t(`message.hint.addSuccess`)) : ElMessage.success(t(`message.hint.modifiedSuccess`));
+		corsDialogRef.value.closeDialog();
+		getTableData();
+	}
 	loadingBtn.value = false;
 };
-
-// 行內編輯保存按鈕
+// 表格删除当前项回调
+const onTableDelRow = async (row: EmptyObjectType, type: string) => {
+	const res = await postLaborcostDeleteApi(row);
+	if (res.status) {
+		ElMessage.success(`${t('message.allButton.deleteBtn')} ${t('message.hint.success')}`);
+		getTableData();
+	}
+};
+// 行內編輯保存按鈕(存著有用)
 // const onHandleSave = (scope) => {
 // 	let validateFieldList: EmptyArrayType = [];
 // 	validateFieldList.push(`data.${scope.$index}.types`);
@@ -178,6 +185,17 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 // 		}
 // 	});
 // };
+// 分页改变时回调
+const onTablePageChange = (page: TableDemoPageType) => {
+	state.tableData.page.pageNum = page.pageNum;
+	state.tableData.page.pageSize = page.pageSize;
+	getTableData();
+};
+// 搜索点击时表单回调
+const onSearch = (data: EmptyObjectType) => {
+	state.tableData.form = Object.assign({}, state.tableData.form, { ...data });
+	tableRef.value?.pageReset();
+};
 // 拖动显示列排序回调
 const onSortHeader = (data: TableHeaderType[]) => {
 	state.tableData.header = data;
@@ -198,5 +216,8 @@ onMounted(() => {
 			overflow: hidden;
 		}
 	}
+}
+:deep(.table-top .allBtn) {
+	margin-top: 0 !important;
 }
 </style>

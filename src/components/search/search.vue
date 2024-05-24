@@ -26,15 +26,17 @@
 							:maxlength="val.maxlength"
 							v-model="state.form[val.prop]"
 							:placeholder="`${$t('message.pages.pleaseEnter')} ${$t(val.label)}`"
-							clearable
+							:clearable="!val.noclearable"
 							v-if="val.type === 'input'"
 							style="width: 100%"
 						/>
 						<el-date-picker
-							v-model="state.form[val.prop]"
-							type="date"
-							:placeholder="val.placeholder"
 							v-else-if="val.type === 'date'"
+							v-model="state.form[val.prop]"
+							:value-format="val.valueFormat"
+							:clearable="!val.noclearable"
+							:type="val.dateType || 'date'"
+							:placeholder="val.placeholder || `${$t('請選擇')} ${$t(val.label)}`"
 							style="width: 100%"
 						/>
 						<el-date-picker
@@ -53,7 +55,7 @@
 							v-else-if="val.type === 'select'"
 							style="width: 100%"
 							@change="(vals:any) => selectHandelChange(vals,val.prop)"
-							:clearable="!val.clearable"
+							:clearable="!val.noclearable"
 							:filterable="val.filterable"
 							:remote="val.remote"
 							:remote-show-suffix="val.remoteShowSuffix"
@@ -68,6 +70,16 @@
 								<slot name="optionSearchFat" :row="item" :value="val"></slot>
 							</el-option>
 						</el-select>
+						<!-- 樹形選擇框 -->
+						<el-tree-select
+							v-else-if="val.type === 'treeSelect'"
+							check-strictly
+							:clearable="!val.noclearable"
+							v-model="state.form[val.prop]"
+							:data="val.optionsData"
+							:render-after-expand="false"
+							style="width: 100%"
+						/>
 						<!-- 状态 -->
 						<el-switch
 							v-else-if="val.type === 'status'"
@@ -128,6 +140,10 @@ const props = defineProps({
 		type: String,
 		default: () => 'auto',
 	},
+	form: {
+		type: Object,
+		default: () => {},
+	},
 });
 
 // 定义子组件向父组件传值/事件
@@ -144,7 +160,7 @@ const state = reactive<searchState>({
 // 查询
 const onSearch = (formEl: FormInstance | undefined) => {
 	if (!formEl) return;
-	formEl.validate((valid: boolean) => {
+	formEl.validate((valid: boolean): any => {
 		if (valid) {
 			emit('search', state.form);
 		} else {
@@ -180,7 +196,7 @@ const initFormField = () => {
 			});
 			// emit('search', state.form);
 		} else {
-			// state.form[v.prop] = '';
+			if (props.form) state.form[v.prop] = props.form[v.prop];
 		}
 	});
 };

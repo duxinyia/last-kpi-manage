@@ -35,29 +35,41 @@
 							></el-input>
 							<el-date-picker
 								v-if="item.type === 'date'"
-								value-format="YYYY-MM-DD"
+								:value-format="item.valueFormat || 'YYYY-MM-DD'"
 								v-model="state.formData[item.prop]"
-								type="date"
-								:placeholder="$t(item.placeholder)"
+								:placeholder="$t(item.placeholder) || `${$t('請選擇')} ${$t(item.label)}`"
+								:type="item.dateType || 'date'"
 								style="width: 100%"
 							/>
+
 							<!-- 数字输入框 -->
-							<el-input-number
-								v-if="item.type === 'number'"
-								v-model="state.formData[item.prop]"
-								:min="item.min || 0"
-								:max="item.max"
-								size="small"
-								@change="(value:number)=>handleNumberInputChange(value)"
-							/>
+							<template v-if="item.type === 'number'">
+								<el-input-number
+									:style="item.width ? { width: item.width } : { width: '100%' }"
+									controls-position="right"
+									v-model="state.formData[item.prop]"
+									:min="item.min"
+									:precision="item.precision"
+									:step="item.step"
+									:max="item.max"
+									@change="(value:number)=>handleNumberInputChange(value)"
+								/>
+								<span class="ml5">{{ item.unit }}</span>
+							</template>
+
 							<!-- 單選按鈕 -->
 							<div v-if="item.type === 'radio'" class="mb-2 flex items-center">
 								<el-radio-group v-model="state.formData[item.prop]" class="ml-4">
-									<el-radio :label="0">有碼管理</el-radio>
-									<el-radio :label="1">無碼管理</el-radio>
+									<el-radio value="Y">是</el-radio>
+									<el-radio value="N">否</el-radio>
 								</el-radio-group>
 							</div>
-
+							<!-- 多選 -->
+							<el-checkbox-group v-if="item.type === 'checkbox'" v-model="state.formData[item.prop]">
+								<el-checkbox v-for="city in item.cities" :key="city.value" :label="city.name" :value="city.value">
+									{{ city.name }}
+								</el-checkbox>
+							</el-checkbox-group>
 							<!-- <el-input disabled v-if="item.type === 'inputFile'" v-model="state.formData[item.prop]" :placeholder="$t(item.placeholder)" clearable>
 								<template #prepend
 									><el-upload
@@ -145,14 +157,16 @@
 								<el-image class="avatar" v-if="imageUrl" :src="imageUrl" fit="contain" style="width: 148px; height: 148px" />
 								<SvgIcon v-else class="avatar-uploader-icon" name="ele-Plus" />
 							</el-upload>
+							<!-- 選擇框 -->
 							<el-select
 								v-model="state.formData[item.prop]"
 								:placeholder="$t(item.placeholder) || `${$t('message.pages.pleaseSelect')} ${$t(item.label)}`"
-								:clearable="item.clearable"
+								:clearable="item.clearable || true"
 								v-if="item.type === 'select'"
 								style="width: 100%"
 								:disabled="state.dialog.isdisable || state.formData[`${item.prop}disabled`]"
 								@change="(val:any) => selectHandelChange(val,item.prop)"
+								@remove-tag="(val:any) => onRemoveTag(val,item.prop)"
 								:filterable="item.filterable"
 								:remote="item.remote"
 								:reserve-keyword="false"
@@ -168,12 +182,22 @@
 									<slot name="optionFat" :row="val" :items="item"></slot>
 								</el-option>
 							</el-select>
+							<!-- 樹形選擇框 -->
+							<el-tree-select
+								v-if="item.type === 'treeSelect'"
+								v-model="state.formData[item.prop]"
+								:data="item.optionsData"
+								:render-after-expand="false"
+								style="width: 100%"
+							/>
 							<el-switch
 								v-if="item.type === 'switch'"
 								v-model="state.formData[item.prop]"
 								inline-prompt
-								:active-text="$t('message.allButton.startup')"
-								:inactive-text="$t('message.allButton.disable')"
+								:active-text="$t('是')"
+								:inactive-text="$t('否')"
+								active-value="Y"
+								inactive-value="N"
 							></el-switch>
 							<el-input
 								:width="224"
@@ -345,6 +369,7 @@ const emit = defineEmits([
 	'handleTagClose',
 	'innnerDialogCancel',
 	'selectChange',
+	'removeTag',
 	'innnerDialogSubmit',
 	'openInnerDialog',
 	'editDialog',
@@ -515,7 +540,12 @@ const openDialog = (type: string, row?: any, title?: string, submitTxt?: string)
 		nextTick(() => {
 			dialogFormRef.value?.clearValidate();
 		});
-		state.dialog.title = t('message.allButton.editBtn') + ' ' + t(title!) || t('message.allButton.editBtn');
+		if (title) {
+			state.dialog.title = t('message.allButton.editBtn') + ' ' + t(title!) || t('message.allButton.editBtn');
+		} else {
+			state.dialog.title = t('message.allButton.editBtn');
+		}
+
 		state.dialog.submitTxt = t('message.allButton.editSubmit');
 		// 解决表单重置不成功的问题
 		nextTick(() => {
@@ -648,6 +678,10 @@ const handleTagClose = (tag: any) => {
 // 下拉框数据变化
 const selectHandelChange = (val: string, prop: string) => {
 	emit('selectChange', val, prop, state.formData);
+};
+// 清除
+const onRemoveTag = (val: string, prop: string) => {
+	emit('removeTag', val, prop, state.formData);
 };
 // 能搜索的下拉框
 const remoteMethod = (item: EmptyObjectType, query: string) => {

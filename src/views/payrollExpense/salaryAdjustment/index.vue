@@ -17,9 +17,9 @@
 			<Dialog
 				ref="dialogRef"
 				:dialogConfig="state.tableData.dialogConfig"
-				:isFootBtn="isFootBtn"
 				@addData="addData"
 				:loadingBtn="loadingBtn"
+				:isFootBtn="isFootBtn"
 				dialogWidth="50%"
 				@downloadTemp="downloadTemp"
 				@importTableData="submitUpload"
@@ -29,18 +29,12 @@
 	</div>
 </template>
 
-<script setup lang="ts" name="HRpaysRealSalary">
+<script setup lang="ts" name="salaryAdjustment">
 import { defineAsyncComponent, reactive, ref, onMounted } from 'vue';
-// import { getQueryApplyCheckInventoryApi, getCheckDetailsOfMatApi } from '/@/api/reports/acceptanceList';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
-import { getDeptInfoGetDeptInfoApi, getDeptInfoGetOrganizeFrameApi, postDeptInfoUpdateApi } from '/@/api/basicsSet/departmentParameter';
-import {
-	getHrActSalaryApi,
-	postHrActSalaryExportApi,
-	postHrActSalaryImportExcelApi,
-	postHrActSalaryUpdateApi,
-} from '/@/api/payrollExpense/HRpaysRealSalary';
+import { getDeptInfoGetOrganizeFrameApi } from '/@/api/basicsSet/departmentParameter';
+import { postSalaDjustUpdateApi, getSalaDjustApi, postSalaDjustExportApi, postSalaDjustImportExcelApi } from '/@/api/payrollExpense/salaryAdjustment';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const TableSearch = defineAsyncComponent(() => import('/@/components/search/search.vue'));
@@ -61,7 +55,7 @@ const state = reactive<TableDemoState>({
 		header: [
 			{ key: 'deptName', colWidth: '220', title: '部門', type: 'tooltipText', isCheck: true, isTableIcon: true },
 			{ key: 'deptCode', colWidth: '110', title: '單位代碼', type: 'text', isCheck: true },
-			{ key: 'salaryNum', colWidth: '', title: '合計', type: 'text', isCheck: true },
+			{ key: 'adjustnum', colWidth: '', title: '合計', type: 'text', isCheck: true },
 			{ key: 'janNum', colWidth: '', title: '1月', type: 'text', isCheck: true },
 			{ key: 'febNum', colWidth: '', title: '2月', type: 'text', isCheck: true },
 			{ key: 'marNum', colWidth: '', title: '3月', type: 'text', isCheck: true },
@@ -128,7 +122,44 @@ const state = reactive<TableDemoState>({
 		printName: '表格打印演示',
 	},
 });
-
+// 下載模板
+const downloadTemp = () => {
+	window.open(
+		`${import.meta.env.MODE === 'development' ? import.meta.env.VITE_API_URL : window.webConfig.webApiBaseUrl}/doc/SalaDjust.xlsx`,
+		'_blank'
+	);
+};
+// 上传文件
+const submitUpload = async (formEl: EmptyObjectType | undefined) => {
+	const res = await postSalaDjustImportExcelApi(formEl!.raw);
+	if (res.status) {
+		ElMessage.success('上傳成功');
+		dialogRef.value.closeDialog();
+		getTableData();
+	}
+};
+// 下載
+const onExportTable = async () => {
+	const form = state.tableData.form;
+	let data: EmptyObjectType = {
+		...form,
+	};
+	// if (Object.keys(data).length <= 0) return ElMessage.warning(t('沒有可以導出的專案'));
+	const res = await postSalaDjustExportApi(data);
+	const result: any = res.data;
+	let blob = new Blob([result], {
+		// 这里一定要和后端对应，不然可能出现乱码或者打不开文件
+		type: 'application/vnd.ms-excel',
+	});
+	const link = document.createElement('a');
+	link.href = window.URL.createObjectURL(blob);
+	const temp = res.headers['content-disposition'].split(';')[1].split('filename=')[1].replace(new RegExp('"', 'g'), '');
+	link.download = decodeURIComponent(temp);
+	// link.download = `${t('文件')} ${new Date().toLocaleString()}.xlsx`; // 在前端也可以设置文件名字
+	link.click();
+	//释放内存
+	window.URL.revokeObjectURL(link.href);
+};
 // 處理表格數據
 const tData = (datas: EmptyArrayType) => {
 	let len = 0;
@@ -152,7 +183,7 @@ const getTableData = async () => {
 	data = {
 		...form,
 	};
-	const res = await getHrActSalaryApi(data);
+	const res = await getSalaDjustApi(data);
 	let datas = tData(res.data);
 	state.tableData.data = datas;
 	if (res.status) {
@@ -169,7 +200,7 @@ const openDialog = async (type: string, row: EmptyObjectType) => {
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	loadingBtn.value = true;
 	try {
-		const res = await postHrActSalaryUpdateApi(ruleForm);
+		const res = await postSalaDjustUpdateApi(ruleForm);
 		if (res.status) {
 			ElMessage.success(t(`message.hint.modifiedSuccess`));
 			dialogRef.value.closeDialog();
@@ -180,44 +211,7 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 		loadingBtn.value = false;
 	}
 };
-// 下載模板
-const downloadTemp = () => {
-	window.open(
-		`${import.meta.env.MODE === 'development' ? import.meta.env.VITE_API_URL : window.webConfig.webApiBaseUrl}/doc/HrActSalary.xlsx`,
-		'_blank'
-	);
-};
-// 上传文件
-const submitUpload = async (formEl: EmptyObjectType | undefined) => {
-	const res = await postHrActSalaryImportExcelApi(formEl!.raw);
-	if (res.status) {
-		ElMessage.success('上傳成功');
-		dialogRef.value.closeDialog();
-		getTableData();
-	}
-};
-// 下載
-const onExportTable = async () => {
-	const form = state.tableData.form;
-	let data: EmptyObjectType = {
-		...form,
-	};
-	// if (Object.keys(data).length <= 0) return ElMessage.warning(t('沒有可以導出的專案'));
-	const res = await postHrActSalaryExportApi(data);
-	const result: any = res.data;
-	let blob = new Blob([result], {
-		// 这里一定要和后端对应，不然可能出现乱码或者打不开文件
-		type: 'application/vnd.ms-excel',
-	});
-	const link = document.createElement('a');
-	link.href = window.URL.createObjectURL(blob);
-	const temp = res.headers['content-disposition'].split(';')[1].split('filename=')[1].replace(new RegExp('"', 'g'), '');
-	link.download = decodeURIComponent(temp);
-	// link.download = `${t('文件')} ${new Date().toLocaleString()}.xlsx`; // 在前端也可以设置文件名字
-	link.click();
-	//释放内存
-	window.URL.revokeObjectURL(link.href);
-};
+
 // 觸底
 const tableInfiniteScroll = (page, data) => {
 	state.tableData.data = state.tableData.data.concat(data);
@@ -271,8 +265,5 @@ onMounted(() => {
 			overflow: hidden;
 		}
 	}
-}
-:deep(.download-form) {
-	margin-bottom: 50px !important;
 }
 </style>
