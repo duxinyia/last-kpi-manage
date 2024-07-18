@@ -1,7 +1,13 @@
 <template>
 	<div class="table-container layout-padding">
 		<div class="table-padding layout-padding-view layout-padding-auto">
-			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" />
+			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" :form="state.tableData.form">
+				<template #otherBtn>
+					<el-button @click="onView" size="default" type="warning"
+						><el-icon class="mr5"> <ele-View /> </el-icon>{{ $t('預覽') }}
+					</el-button>
+				</template>
+			</TableSearch>
 			<Table
 				ref="tableRef"
 				v-bind="state.tableData"
@@ -21,10 +27,10 @@
 
 <script setup lang="ts" name="annualEstimates">
 import { defineAsyncComponent, reactive, ref, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
-import { getDeptInfoGetOrganizeFrameApi } from '/@/api/basicsSet/departmentParameter';
-import { getExamsetestApi, getExamsetstageApi, postReportinfoSaveApi } from '/@/api/departmenAssessment/annualEstimates';
+import { getDeptInfoGetKPIOrganizeApi } from '/@/api/global';
+import { getExamsetestApi, getExamsetstageApi, getPreviewExamsetstageApi, postReportinfoSaveApi } from '/@/api/departmenAssessment/annualEstimates';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const TableSearch = defineAsyncComponent(() => import('/@/components/search/search.vue'));
@@ -45,10 +51,10 @@ const state = reactive<TableDemoState>({
 			{ key: 'deptName', colWidth: '220', title: '部門', type: 'tooltipText', isCheck: true, isTableIcon: true },
 			{ key: 'deptCode', colWidth: '', title: '單位代碼', type: 'text', isCheck: true },
 			{ key: 'lastyearsalary', colWidth: '', title: '上年度實際薪資', type: 'text', isCheck: true },
-			{ key: 'growthrate', colWidth: '', title: '本年度標準成長率', type: 'text', isCheck: true },
+			{ key: 'growthratePer', colWidth: '', title: '本年度標準成長率', type: 'text', isCheck: true },
 			{ key: 'standardsalary', colWidth: '', title: '本年度標準漲薪', type: 'text', isCheck: true },
 			{ key: 'salaryestimate', colWidth: '', title: '本年度薪資暫估', type: 'text', isCheck: true },
-			{ key: 'expectprop', colWidth: '', title: '預計節省比例', type: 'text', isCheck: true },
+			{ key: 'expectpropPer', colWidth: '', title: '預計節省比例', type: 'text', isCheck: true },
 			{ key: 'expectsalary', colWidth: '', title: '預計節省金額', type: 'text', isCheck: true },
 			{ key: 'expectreward', colWidth: '', title: '預計獎勵額度', type: 'text', isCheck: true },
 			{ key: 'kpiscore', colWidth: '', title: '人力KPI得分預估', type: 'text', isCheck: true },
@@ -67,13 +73,23 @@ const state = reactive<TableDemoState>({
 			isPage: false, //是否有分页
 			operateWidth: 120, //操作栏宽度，如果操作栏有几个按钮就自己定宽度
 			tableAlign: 'left',
-			// height: 500,
+			height: 700,
 			// expand: true,
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
 		search: [
-			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '' },
-			{ label: '年度', prop: 'YearStr', required: false, type: 'date', placeholder: '', dateType: 'year', valueFormat: 'YYYY', noclearable: true },
+			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '', noclearable: true },
+			{
+				label: '年月',
+				prop: 'YearStr',
+				required: false,
+				type: 'date',
+				placeholder: '',
+				dateType: 'month',
+				valueFormat: 'YYYYMM',
+				noclearable: true,
+				editable: false,
+			},
 		],
 		searchConfig: {
 			isSearchBtn: true,
@@ -89,7 +105,7 @@ const state = reactive<TableDemoState>({
 			{ label: '單位代碼', prop: 'deptCode', placeholder: '', required: false, type: 'text', isCheck: true },
 		],
 		// 给后端的数据
-		form: {},
+		form: { DeptId: 'A00001', YearStr: `${new Date().getFullYear()}${(new Date().getMonth() + 1).toString().padStart(2, '0')}` },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -104,6 +120,9 @@ const state = reactive<TableDemoState>({
 const tData = (datas: EmptyArrayType) => {
 	let len = 0;
 	datas.forEach((item) => {
+		item.growthratePer = item.growthrate != null ? item.growthrate + '%' : '';
+		item.expectpropPer = item.expectprop != null ? item.expectprop + '%' : '';
+
 		item.children = item.details;
 		if (item.children.length > 0) {
 			item.tableIcon = 'ele-FolderOpened';
@@ -163,20 +182,50 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 // 計算保存按鈕
 const onOpentopBtnOther = async (_: any, type: string) => {
 	if (type === 'com') {
-		const res = await getExamsetstageApi(state.tableData.form);
-		state.tableData.data = res.data;
+		state.tableData.config.loading = true;
+		const res = await getExamsetstageApi({ YearStr: state.tableData.form.YearStr });
+		let datas = tData(res.data);
+		state.tableData.data = datas;
+		if (res.status) {
+			state.tableData.config.loading = false;
+		}
 	} else {
+		// 保存
+		ElMessageBox.confirm(`確定保存嗎？`, t('message.hint.tips'), {
+			confirmButtonText: t('message.allButton.ok'),
+			cancelButtonText: t('message.allButton.cancel'),
+			type: 'warning',
+			draggable: true,
+			// dangerouslyUseHTMLString: true, // 注意此属性如果想寫标签
+			closeOnClickModal: false,
+		})
+			.then(async () => {
+				const fromData = state.tableData.form;
+				const res = await postReportinfoSaveApi({ runId: '', yandm: fromData.YearStr, rtype: 'Est', rvalue: JSON.stringify(state.tableData.data) });
+				// getTableData();
+				ElMessage.success(t(`保存成功！`));
+			})
+			.catch(() => {});
 	}
-	console.log(type);
 };
 // 觸底
-const tableInfiniteScroll = (page, data) => {
+const tableInfiniteScroll = (page: any, data: EmptyObjectType) => {
 	state.tableData.data = state.tableData.data.concat(data);
 };
 // 搜索点击时表单回调
 const onSearch = (data: EmptyObjectType) => {
 	state.tableData.form = Object.assign({}, state.tableData.form, { ...data });
 	tableRef.value?.pageReset();
+};
+// 預覽
+const onView = async () => {
+	state.tableData.config.loading = true;
+	const res = await getPreviewExamsetstageApi(state.tableData.form);
+	let datas = tData(res.data);
+	state.tableData.data = datas;
+	if (res.status) {
+		state.tableData.config.loading = false;
+	}
 };
 
 // 拖动显示列排序回调
@@ -188,6 +237,7 @@ const treeData = (datas: EmptyArrayType) => {
 	datas.forEach((item) => {
 		item.label = item.deptName;
 		item.value = item.deptCode;
+		item.children = item.details;
 		if (item.children) {
 			treeData(item.children);
 		}
@@ -196,7 +246,7 @@ const treeData = (datas: EmptyArrayType) => {
 };
 // 得到部門下拉樹表格
 const getBuTreeSelectData = async () => {
-	const res = await getDeptInfoGetOrganizeFrameApi();
+	const res = await getDeptInfoGetKPIOrganizeApi();
 	const data = treeData(res.data);
 	state.tableData.search[0].optionsData = data;
 };

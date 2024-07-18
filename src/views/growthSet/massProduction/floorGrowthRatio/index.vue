@@ -111,7 +111,7 @@ const state = reactive<TableDemoState>({
 		// 弹窗表单
 		dialogConfig: [],
 		// 给后端的数据
-		form: { yyyy: '2024', buCode: 'CMA' },
+		form: { yyyy: new Date().getFullYear().toString(), buCode: 'CMA' },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,

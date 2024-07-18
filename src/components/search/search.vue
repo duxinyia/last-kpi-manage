@@ -34,6 +34,7 @@
 							v-else-if="val.type === 'date'"
 							v-model="state.form[val.prop]"
 							:value-format="val.valueFormat"
+							:editable="val.editable"
 							:clearable="!val.noclearable"
 							:type="val.dateType || 'date'"
 							:placeholder="val.placeholder || `${$t('請選擇')} ${$t(val.label)}`"
@@ -104,10 +105,11 @@
 								<SvgIcon :name="state.isToggle ? 'ele-ArrowUp' : 'ele-ArrowDown'" />
 							</div>
 						</template>
-						<div>
-							<el-button v-if="searchConfig.isSearchBtn" size="default" type="primary" @click="onSearch(tableSearchRef)"
+						<div v-if="searchConfig.isSearchBtn" style="display: flex">
+							<el-button size="default" type="primary" @click="onSearch(tableSearchRef)"
 								><el-icon class="mr5"> <ele-Search /> </el-icon>{{ $t('message.allButton.searchBtn') }}
 							</el-button>
+							<slot name="otherBtn"></slot>
 							<!-- <el-button size="default" type="info" class="ml10" @click="onReset(tableSearchRef)"
 								><el-icon><ele-RefreshLeft /></el-icon> {{ $t('message.allButton.resetBtn') }}
 							</el-button> -->

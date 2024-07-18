@@ -1,7 +1,7 @@
 <template>
 	<div class="table-container layout-padding">
 		<div class="table-padding layout-padding-view layout-padding-auto">
-			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" />
+			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" :form="state.tableData.form" />
 			<Table
 				ref="tableRef"
 				v-bind="state.tableData"
@@ -21,6 +21,8 @@
 				dialogWidth="50%"
 				@selectChange="onSelectChange"
 				@removeTag="onRemoveTag"
+				@switchChange="onSwitchChange"
+				@handleNumberInputBlur="onNumberInputBlur"
 			>
 			</Dialog>
 		</div>
@@ -53,6 +55,7 @@ const state = reactive<TableDemoState>({
 			{ key: 'deptName', colWidth: '250', title: '部門', type: 'tooltipText', isCheck: true, isTableIcon: true },
 			{ key: 'deptCode', colWidth: '', title: '單位代碼', type: 'text', isCheck: true },
 			{ key: 'isKPI', colWidth: '', title: '是否參與', type: 'text', isCheck: true },
+			{ key: 'isTotal', colWidth: '', title: '是否编辑', type: 'text', isCheck: true },
 			{ key: 'deptCoeff', colWidth: '', title: '部門係數', type: 'text', isCheck: true },
 			{
 				key: 'factorStr',
@@ -100,18 +103,18 @@ const state = reactive<TableDemoState>({
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
 		search: [
-			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '' },
-			{
-				label: '是否參與',
-				prop: 'IsKPI',
-				required: false,
-				type: 'select',
-				placeholder: '',
-				options: [
-					{ value: 'Y', label: 'Y', text: 'Y' },
-					{ value: 'N', label: 'N', text: 'N' },
-				],
-			},
+			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '', noclearable: true },
+			// {
+			// 	label: '是否參與',
+			// 	prop: 'IsKPI',
+			// 	required: false,
+			// 	type: 'select',
+			// 	placeholder: '',
+			// 	options: [
+			// 		{ value: 'Y', label: 'Y', text: 'Y' },
+			// 		{ value: 'N', label: 'N', text: 'N' },
+			// 	],
+			// },
 		],
 		searchConfig: {
 			isSearchBtn: true,
@@ -122,6 +125,7 @@ const state = reactive<TableDemoState>({
 			{ label: '部門', prop: 'deptName', placeholder: '', required: false, type: 'text', isCheck: true },
 			{ label: '單位代碼', prop: 'deptCode', placeholder: '', required: false, type: 'text', isCheck: true },
 			{ label: '是否參與', prop: 'isKPI', placeholder: '', required: false, type: 'switch', isCheck: true },
+			{ label: '是否编辑', prop: 'isTotal', placeholder: '', required: false, type: 'switch', isCheck: true },
 			{
 				label: '部門係數',
 				prop: 'deptCoeff',
@@ -180,7 +184,7 @@ const state = reactive<TableDemoState>({
 			},
 		],
 		// 给后端的数据
-		form: {},
+		form: { DeptId: 'A00001' },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -190,13 +194,96 @@ const state = reactive<TableDemoState>({
 		printName: '表格打印演示',
 	},
 });
-
+//部门系数失去焦点
+const onNumberInputBlur = (e: any, prop: string, formData: EmptyObjectType) => {
+	if (prop === 'deptCoeff') {
+		state.tableData.dialogConfig!.forEach((item) => {
+			if (item.prop == 'assweight' && formData.deptCoeff == 0 && formData.isKPI == 'Y' && formData.isTotal == 'N') {
+				item.isCheck = false;
+			}
+			if (item.type != 'switch' && item.prop != 'deptCoeff' && formData.isKPI == 'Y' && formData.isTotal == 'Y') {
+				item.disabled = formData.deptCoeff == 0 ? true : false;
+			}
+			if (item.type != 'switch' && (formData.isTotal == 'N' || formData.isKPI == 'N')) {
+				item.disabled = true;
+				// formData[item.prop] = null;
+			}
+		});
+	}
+	if (formData.isKPI === 'Y' && formData.deptCoeff == 0 && formData.isTotal == 'Y') {
+		a = [];
+		state.tableData.dialogConfig = state.tableData.dialogConfig!.slice(0, 9);
+		state.tableData.dialogConfig?.forEach((item) => {
+			if (item.prop === 'correlatefactorArr') {
+				formData.correlatefactorArr = formData.correlatefactorArr instanceof Array ? [] : '';
+			} else if (item.type != 'text' && item.type != 'switch' && item.prop != 'deptCoeff') {
+				formData[item.prop] = null;
+			}
+		});
+	}
+};
+// 改變開關控制是否禁用
+const onSwitchChange = (val: string, type: string, formData: EmptyObjectType) => {
+	if (type == 'isKPI') {
+		// 單一因子的權重不展示
+		state.tableData.dialogConfig!.forEach((item) => {
+			if (item.prop == 'assweight' && val === 'N') {
+				item.isCheck = false;
+			}
+			if (item.prop === 'isTotal') {
+				item.disabled = val === 'N' ? true : false;
+			}
+			// if (item.prop != 'isKPI') {
+			// 	item.disabled = val === 'N' ? true : false;
+			// }
+		});
+		if (val === 'N') {
+			a = [];
+			state.tableData.dialogConfig = state.tableData.dialogConfig!.slice(0, 9);
+			state.tableData.dialogConfig?.forEach((item) => {
+				if (item.prop === 'correlatefactorArr') {
+					formData.correlatefactorArr = formData.correlatefactorArr instanceof Array ? [] : '';
+				}
+				if (item.type != 'text' && item.prop != 'isKPI') {
+					formData[item.prop] = null;
+				}
+				if (item.prop == 'isTotal') {
+					formData[item.prop] = 'N';
+				}
+			});
+		}
+		// else {
+		// 	formData.isTotal = 'Y';
+		// }
+	} else {
+		state.tableData.dialogConfig!.forEach((item) => {
+			if (item.prop == 'assweight' && val === 'N') {
+				item.isCheck = false;
+			}
+			if (item.type != 'switch') {
+				item.disabled = val === 'N' ? true : false;
+			}
+		});
+		if (val === 'N') {
+			a = [];
+			state.tableData.dialogConfig = state.tableData.dialogConfig!.slice(0, 9);
+			state.tableData.dialogConfig?.forEach((item) => {
+				if (item.prop === 'correlatefactorArr') {
+					formData.correlatefactorArr = formData.correlatefactorArr instanceof Array ? [] : '';
+				}
+				if (item.type != 'text' && item.type != 'switch') {
+					formData[item.prop] = null;
+				}
+			});
+		}
+	}
+};
 // 處理表格數據
 const tData = (datas: EmptyArrayType) => {
 	let len = 0;
 	datas.forEach((item) => {
-		if (item.faWeight) {
-			item.faWeight.forEach((f) => {
+		if (item.faWeight && item.factorStr != '1') {
+			item.faWeight.forEach((f: any) => {
 				item[`assweight-${f.id}`] = f.value;
 				item[`assweightText-${f.id}`] = f.value + '%';
 			});
@@ -218,7 +305,12 @@ const tData = (datas: EmptyArrayType) => {
 		// });
 		// item.assweightText = item.assweight ? item.assweight + '%' : '';
 		// item.item.correlatefactorCh = item.correlatefactorCh.join(',');
-		if (item.factorStr === '1') {
+		if (item.isKPI == null) {
+			item.isKPI = 'N';
+		} else if (!item.isTotal) {
+			// item.isTotal = 'N';
+		}
+		if (item.factorStr === '1' && item.correlatefactorArr) {
 			item[`assweight`] = '100%';
 			item[`assweightText-${item.correlatefactorArr[0]}`] = '100%';
 		}
@@ -251,12 +343,12 @@ const getTableData = async () => {
 	}
 };
 // 判斷來個數組是否全等
-const arraysEqual = (a1, a2) => {
+const arraysEqual = (a1: EmptyArrayType, a2: EmptyArrayType | string) => {
 	return JSON.stringify(a1) === JSON.stringify(a2);
 };
 // 得到來個數組不同的數據
-const filterArr2 = (arr1, arr2) => {
-	return arr1.concat(arr2).filter((t, i, arr) => {
+const filterArr2 = (arr1: EmptyArrayType, arr2: EmptyArrayType | string) => {
+	return arr1.concat(arr2).filter((t: any, i, arr) => {
 		return arr.indexOf(t) === arr.lastIndexOf(t);
 	});
 };
@@ -264,14 +356,14 @@ const filterArr2 = (arr1, arr2) => {
 // 清除多選
 const onRemoveTag = (val: string, prop: string, formData: EmptyObjectType) => {};
 // 用於判斷與關聯因子是否相等的數組
-let a = [];
+let a: any = [];
 
 // 關聯因子改變
 const onSelectChange = (val: string, prop: string, formData: EmptyObjectType) => {
 	if (prop === 'factorStr') {
 		formData.correlatefactorArr = val == '1' ? '' : [];
 		a = [];
-		state.tableData.dialogConfig = state.tableData.dialogConfig.slice(0, 8);
+		state.tableData.dialogConfig = state.tableData.dialogConfig!.slice(0, 9);
 		state.tableData.dialogConfig!.forEach((item) => {
 			if (item.prop === 'correlatefactorArr') {
 				item.multiple = val == '1' ? false : true;
@@ -280,8 +372,8 @@ const onSelectChange = (val: string, prop: string, formData: EmptyObjectType) =>
 				formData.assweight = 100 + '%';
 			}
 		});
-	} else if (prop === 'correlatefactorArr' && val instanceof Array) {
-		let selectAllLabel = [];
+	} else if (prop === 'correlatefactorArr' && (val as any) instanceof Array) {
+		let selectAllLabel: EmptyArrayType = [];
 		// 拿到關聯因素的下拉框label值
 		state.tableData.dialogConfig!.forEach((item) => {
 			if (item.prop === 'correlatefactorArr') {
@@ -298,8 +390,8 @@ const onSelectChange = (val: string, prop: string, formData: EmptyObjectType) =>
 		// 對比
 		if (arraysEqual(a, val) && val.length > 0) {
 			// 每選一個新值增加對應的數據輸入框
-			state.tableData.dialogConfig.push({
-				label: `${selectAllLabel[val[val.length - 1] - 1]}關聯權重`,
+			state.tableData.dialogConfig!.push({
+				label: `${selectAllLabel[(val[val.length - 1] as any) - 1]}關聯權重`,
 				prop: `assweight-${val[val.length - 1]}`,
 				placeholder: '',
 				required: false,
@@ -315,7 +407,7 @@ const onSelectChange = (val: string, prop: string, formData: EmptyObjectType) =>
 			state.tableData.dialogConfig?.forEach((item, index) => {
 				if (diff.includes(item.prop.split('-')[1]) && item.prop.split('-')[0] == 'assweight') {
 					a = val;
-					state.tableData.dialogConfig.splice(index, 1);
+					state.tableData.dialogConfig!.splice(index, 1);
 					formData[item.prop] = null;
 				}
 				if (val.length <= 0) {
@@ -324,7 +416,7 @@ const onSelectChange = (val: string, prop: string, formData: EmptyObjectType) =>
 					if (item.prop.includes('-')) {
 						formData[item.prop] = null;
 					}
-					state.tableData.dialogConfig = state.tableData.dialogConfig.slice(0, 8);
+					state.tableData.dialogConfig = state.tableData.dialogConfig!.slice(0, 9);
 				}
 			});
 		}
@@ -333,11 +425,17 @@ const onSelectChange = (val: string, prop: string, formData: EmptyObjectType) =>
 
 // 打开編輯弹窗
 const openDialog = async (type: string, row: EmptyObjectType) => {
-	let selectAllLabel = [];
+	let selectAllLabel: EmptyArrayType = [];
 	// 如果是單一因子將關聯因素數值變成字符串，否則是數組
-	row.correlatefactorArr =
-		row.factorStr == '1' && row.correlatefactorArr instanceof Array ? row.correlatefactorArr.join() || '' : row.correlatefactorArr || [];
-	state.tableData.dialogConfig = state.tableData.dialogConfig.slice(0, 8);
+	if (row.correlatefactor) {
+		a = row.correlatefactor.split(',');
+		row.correlatefactorArr = row.factorStr == '1' && row.correlatefactor ? row.correlatefactor || '' : row.correlatefactor.split(',') || [];
+	} else {
+		row.correlatefactorArr =
+			row.factorStr == '1' && row.correlatefactorArr instanceof Array ? row.correlatefactorArr.join() || '' : row.correlatefactorArr || [];
+	}
+
+	state.tableData.dialogConfig = state.tableData.dialogConfig!.slice(0, 9);
 	// 拿到關聯因素的下拉框label值
 	state.tableData.dialogConfig!.forEach((item) => {
 		if (item.prop === 'correlatefactorArr') {
@@ -346,16 +444,9 @@ const openDialog = async (type: string, row: EmptyObjectType) => {
 			});
 		}
 	});
-
-	state.tableData.dialogConfig?.forEach((item) => {
-		if (item.prop === 'assweight') {
-			item.isCheck = row.factorStr === '1' ? true : false;
-		}
-	});
-
-	if (row.faWeight && row.faWeight.length > 0) {
-		row.faWeight.forEach((item) => {
-			state.tableData.dialogConfig.push({
+	if (row.faWeight && row.faWeight.length > 0 && row.factorStr != '1') {
+		row.faWeight.forEach((item: any) => {
+			state.tableData.dialogConfig!.push({
 				label: `${selectAllLabel[item.id * 1 - 1]}關聯權重`,
 				prop: `assweight-${item.id * 1}`,
 				placeholder: '',
@@ -369,39 +460,67 @@ const openDialog = async (type: string, row: EmptyObjectType) => {
 			});
 		});
 	}
-
-	dialogRef.value.openDialog(type, row);
 	state.tableData.dialogConfig!.forEach((item) => {
 		if (item.prop === 'correlatefactorArr') {
 			// 如果是單一因子關聯因素是單選框，否則多選框
 			item.multiple = row.factorStr == '1' ? false : true;
+		} else if (item.prop === 'assweight') {
+			item.isCheck = row.factorStr === '1' ? true : false;
 		}
 	});
+	dialogRef.value.openDialog(type, row);
+	let switchType = '';
+	let valCur = '';
+	if (row.isKPI === 'Y' && row.isTotal === 'Y') {
+		switchType = 'isTotal';
+		valCur = row.isTotal;
+		state.tableData.dialogConfig!.forEach((item) => {
+			item.disabled = false;
+		});
+	} else if (row.isKPI === 'N' || (row.isKPI === 'Y' && row.isTotal === 'N')) {
+		switchType = 'isKPI';
+		valCur = row.isKPI;
+	}
+	onSwitchChange(valCur, switchType, row);
+	onNumberInputBlur('', 'deptCoeff', row);
 };
 //修改數據
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	// console.log(ruleForm);
-	let { deptCode, deptName, isKPI, deptCoeff, factorStr, correlateBu, correlatefactorArr, assweight } = ruleForm;
-	let editData = { deptCode, deptName, isKPI: isKPI || 'N', deptCoeff, factorStr, correlateBu, correlatefactorArr };
+	let { deptCode, deptName, isKPI, deptCoeff, factorStr, correlateBu, correlatefactorArr, assweight, isTotal } = ruleForm;
+	let editData: EmptyObjectType = { deptCode, deptName, isKPI: isKPI || 'N', deptCoeff, factorStr, correlateBu, correlatefactorArr, isTotal };
 	let sum = 0;
-	if (factorStr === '1') {
+	editData.faWeight = [];
+	// 单一因子
+	if (ruleForm.factorStr === '1') {
 		editData.correlatefactorArr = correlatefactorArr.split(',');
+		editData.faWeight.push({ id: editData.correlatefactorArr[0], value: 100 });
 	} else {
-		editData.faWeight = [];
+		// 復合因子
+		if (editData.isKPI === 'N' || editData.isTotal === 'N' || editData.deptCoeff == 0) {
+			editData.correlatefactorArr = [];
+		}
+		console.log(ruleForm);
+
 		for (let key in ruleForm) {
 			if (key.includes('-') && key.split('-')[0] === 'assweight' && ruleForm[key] !== null) {
 				editData.faWeight.push({ id: key.split('-')[1], value: ruleForm[key] });
 				sum = parseFloat((sum + ruleForm[key]).toFixed(2));
 			}
 		}
-		// 判斷所有的因素是否合計為100
-		if (sum != 100) {
-			return ElMessage.warning(t(`權重合計應為100%，請更改`));
+		if (isKPI === 'Y' && ruleForm.deptCoeff != 0 && isTotal == 'Y') {
+			// 判斷所有的因素是否合計為100
+			if (sum != 100 || editData.faWeight.length != ruleForm.correlatefactorArr.length) {
+				return ElMessage.warning(t(`權重合計應為100%，請更改`));
+			}
 		}
 	}
 
 	try {
 		loadingBtn.value = true;
+		if (editData.isKPI === 'N' || editData.isTotal === 'N' || editData.deptCoeff == 0) {
+			editData.faWeight = [];
+		}
 		// console.log(editData);
 		const res = await postDeptInfoUpdateApi(editData);
 		if (res.status) {
@@ -415,7 +534,7 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	}
 };
 // 觸底
-const tableInfiniteScroll = (page, data) => {
+const tableInfiniteScroll = (page: any, data: EmptyObjectType) => {
 	state.tableData.data = state.tableData.data.concat(data);
 };
 // 搜索点击时表单回调

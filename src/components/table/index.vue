@@ -729,7 +729,6 @@ const infiniteScroll = () => {
 		page.value++;
 		if (page.value <= total && props.tempTableData.length > 15) {
 			let data = props.tempTableData.slice(page.value * 15, page.value * 15 + 15);
-
 			emit('onTableInfiniteScroll', page.value, data);
 		}
 		if (page.value === total) {
@@ -914,7 +913,7 @@ defineExpose({
 	}
 	.button {
 		// width: 80px;
-		height: 32px;
+		height: 28px;
 	}
 
 	.footer {
@@ -929,6 +928,7 @@ defineExpose({
 	:deep(.el-table th.el-table__cell) {
 		background-color: var(--el-color-primary-light-9);
 		color: var(--el-text-color-primary);
+		padding: 13px 0 !important;
 	}
 	// 行內編輯的行高跟bottom的距離
 	:deep(.el-form-item--large .el-form-item__content) {
@@ -947,6 +947,10 @@ defineExpose({
 	pointer-events: none !important;
 	cursor: not-allowed !important;
 }
+:deep(.el-table--large .el-table__cell) {
+	padding: 8px 0 !important;
+}
+
 :deep(.el-form-item__content) {
 	display: flex;
 	justify-content: center;

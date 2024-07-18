@@ -26,7 +26,7 @@ export function postDemandExportApi(params:EmptyObjectType) {
   });
 }
 // 導入
-export function postDemandImportExcelApi(file:any) {
+export function postDemandImportExcelApi(file:any,YearStr:string) {
   return request({
     url: '/api/Demand/ImportExcel',
     method: 'POST',
@@ -35,6 +35,7 @@ export function postDemandImportExcelApi(file:any) {
   },
     params:{},
     data:{
+      YearStr,
       file
     }
   });

@@ -42,18 +42,18 @@ const state = reactive<TableDemoState>({
 		// 表头内容（必传，注意格式）
 		header: [
 			{ key: 'month', colWidth: '', title: '月份', type: 'text', isCheck: true },
-			{ key: 'mm-1', colWidth: '', title: '1月', type: 'text', isCheck: true },
-			{ key: 'mm-2', colWidth: '', title: '2月', type: 'text', isCheck: true },
-			{ key: 'mm-3', colWidth: '', title: '3月', type: 'text', isCheck: true },
-			{ key: 'mm-4', colWidth: '', title: '4月', type: 'text', isCheck: true },
-			{ key: 'mm-5', colWidth: '', title: '5月', type: 'text', isCheck: true },
-			{ key: 'mm-6', colWidth: '', title: '6月', type: 'text', isCheck: true },
-			{ key: 'mm-7', colWidth: '', title: '7月', type: 'text', isCheck: true },
-			{ key: 'mm-8', colWidth: '', title: '8月', type: 'text', isCheck: true },
-			{ key: 'mm-9', colWidth: '', title: '9月', type: 'text', isCheck: true },
-			{ key: 'mm-10', colWidth: '', title: '10月', type: 'text', isCheck: true },
-			{ key: 'mm-11', colWidth: '', title: '11月', type: 'text', isCheck: true },
-			{ key: 'mm-12', colWidth: '', title: '12月', type: 'text', isCheck: true },
+			{ key: 'janNum', colWidth: '', title: '1月', type: 'text', isCheck: true },
+			{ key: 'febNum', colWidth: '', title: '2月', type: 'text', isCheck: true },
+			{ key: 'marNum', colWidth: '', title: '3月', type: 'text', isCheck: true },
+			{ key: 'aprNum', colWidth: '', title: '4月', type: 'text', isCheck: true },
+			{ key: 'mayNum', colWidth: '', title: '5月', type: 'text', isCheck: true },
+			{ key: 'junNum', colWidth: '', title: '6月', type: 'text', isCheck: true },
+			{ key: 'julNum', colWidth: '', title: '7月', type: 'text', isCheck: true },
+			{ key: 'augNum', colWidth: '', title: '8月', type: 'text', isCheck: true },
+			{ key: 'septNum', colWidth: '', title: '9月', type: 'text', isCheck: true },
+			{ key: 'octNum', colWidth: '', title: '10月', type: 'text', isCheck: true },
+			{ key: 'novNum', colWidth: '', title: '11月', type: 'text', isCheck: true },
+			{ key: 'decNum', colWidth: '', title: '12月', type: 'text', isCheck: true },
 		],
 		// 配置项（必传）
 		config: {
@@ -79,18 +79,18 @@ const state = reactive<TableDemoState>({
 		btnConfig: [{ type: 'edit', name: 'message.allButton.edit', isSure: false, color: '#438df5', icon: 'ele-Edit' }],
 		// 弹窗表单
 		dialogConfig: [
-			{ label: '1月', prop: 'mm-1', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '2月', prop: 'mm-2', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '3月', prop: 'mm-3', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '4月', prop: 'mm-4', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '5月', prop: 'mm-5', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '6月', prop: 'mm-6', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '7月', prop: 'mm-7', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '8月', prop: 'mm-8', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '9月', prop: 'mm-9', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '10月', prop: 'mm-10', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '11月', prop: 'mm-11', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
-			{ label: '12月', prop: 'mm-12', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '1月', prop: 'janNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '2月', prop: 'febNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '3月', prop: 'marNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '4月', prop: 'aprNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '5月', prop: 'mayNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '6月', prop: 'junNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '7月', prop: 'julNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '8月', prop: 'augNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '9月', prop: 'septNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '10月', prop: 'octNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '11月', prop: 'novNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
+			{ label: '12月', prop: 'decNum', placeholder: '', required: false, type: 'number', isCheck: true, precision: 2 },
 		],
 		// 给后端的数据
 		form: { YearStr: new Date().getFullYear().toString() },
@@ -114,15 +114,19 @@ const getTableData = async () => {
 		...form,
 	};
 	const res = await getGetMonCoeffApi(data);
-	let myData = [{}];
-	res.data.forEach((item: any) => {
-		myData.forEach((i: any) => {
-			i.month = '係數';
-			i['mm-' + item.monthStr] = item.adjustCoeff;
-			i.year = item.yearStr;
-		});
+	state.tableData.data = res.data;
+	res.data.forEach((item) => {
+		item.month = '係數';
 	});
-	state.tableData.data = myData;
+	// let myData = [{}];
+	// res.data.forEach((item: any) => {
+	// 	myData.forEach((i: any) => {
+	// 		i.month = '係數';
+	// 		i['mm-' + item.monthStr] = item.adjustCoeff;
+	// 		i.year = item.yearStr;
+	// 	});
+	// });
+	// state.tableData.data = myData;
 	if (res.status) {
 		state.tableData.config.loading = false;
 	}
@@ -134,16 +138,16 @@ const openDialog = async (type: string, row: EmptyObjectType) => {
 };
 //修改數據
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
-	let form = { ...ruleForm };
+	// let form = { ...ruleForm };
 	delete ruleForm.month;
-	delete ruleForm.year;
-	let getData = [];
-	for (let key in ruleForm) {
-		getData.push({ yearStr: form.year, monthStr: key.split('-')[1], adjustCoeff: ruleForm[key] });
-	}
+	// delete ruleForm.year;
+	// let getData = [];
+	// for (let key in ruleForm) {
+	// 	getData.push({ yearStr: form.year, monthStr: key.split('-')[1], adjustCoeff: ruleForm[key] });
+	// }
 	loadingBtn.value = true;
 	try {
-		const res = await postMonCoeffUpdateApi(getData);
+		const res = await postMonCoeffUpdateApi(ruleForm);
 		if (res.status) {
 			ElMessage.success(t(`message.hint.modifiedSuccess`));
 			dialogRef.value.closeDialog();

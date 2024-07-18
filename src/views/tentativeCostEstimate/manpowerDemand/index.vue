@@ -1,7 +1,7 @@
 <template>
 	<div class="table-container layout-padding">
 		<div class="table-padding layout-padding-view layout-padding-auto">
-			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" />
+			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" :form="state.tableData.form" />
 			<Table
 				ref="tableRef"
 				v-bind="state.tableData"
@@ -35,7 +35,7 @@
 import { defineAsyncComponent, reactive, ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
-import { getDeptInfoGetOrganizeFrameApi } from '/@/api/basicsSet/departmentParameter';
+import { getDeptInfoGetKPIOrganizeApi } from '/@/api/global';
 import { getDemandApi, postDemandUpdateApi, postDemandExportApi, postDemandImportExcelApi } from '/@/api/tentativeCostEstimate/manpowerDemand';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
@@ -78,8 +78,18 @@ const state = reactive<TableDemoState>({
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
 		search: [
-			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '' },
-			{ label: '年度', prop: 'YearStr', required: false, type: 'date', placeholder: '', dateType: 'year', valueFormat: 'YYYY' },
+			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '', noclearable: true },
+			{
+				label: '年月',
+				prop: 'YearStr',
+				required: false,
+				type: 'date',
+				placeholder: '',
+				dateType: 'month',
+				valueFormat: 'YYYY-MM',
+				noclearable: true,
+				editable: false,
+			},
 		],
 		searchConfig: {
 			isSearchBtn: true,
@@ -91,7 +101,7 @@ const state = reactive<TableDemoState>({
 			{ label: '單位代碼', prop: 'deptName', placeholder: '', required: false, type: 'text', isCheck: true },
 		],
 		// 给后端的数据
-		form: {},
+		form: { DeptId: 'A00001', YearStr: `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}` },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -105,9 +115,9 @@ const state = reactive<TableDemoState>({
 const downloadTemp = () => {
 	window.open(`${import.meta.env.MODE === 'development' ? import.meta.env.VITE_API_URL : window.webConfig.webApiBaseUrl}/doc/Demand.xlsx`, '_blank');
 };
-// 上传文件
+// 上传文件YearStr
 const submitUpload = async (formEl: EmptyObjectType | undefined) => {
-	const res = await postDemandImportExcelApi(formEl!.raw);
+	const res = await postDemandImportExcelApi(formEl!.raw, state.tableData.form.YearStr);
 	if (res.status) {
 		ElMessage.success('上傳成功');
 		dialogRef.value.closeDialog();
@@ -140,6 +150,7 @@ const onExportTable = async () => {
 const tData = (datas: EmptyArrayType) => {
 	const montArr = ['janNum', 'febNum', 'marNum', 'aprNum', 'mayNum', 'junNum', 'julNum', 'augNum', 'septNum', 'octNum', 'novNum', 'decNum'];
 	datas.forEach((item) => {
+		item.editIsShow = item.canEdit === 'Y' ? false : true;
 		item.children = item.details;
 		item.demandDetails.forEach((demand: any) => {
 			montArr.forEach((m) => {
@@ -183,7 +194,7 @@ const openDialog = async (type: string, row: EmptyObjectType) => {
 // 展開行
 let loadData = {};
 const expandedRowKeys = ref<string[]>([]);
-const toggleRowExpansion = async (row: EmptyObjectType, column: Object, expanded: any, contractId, loadMap) => {
+const toggleRowExpansion = async (row: EmptyObjectType, column: Object, expanded: any) => {
 	// loadData = loadMap.get(contractId);
 };
 
@@ -191,7 +202,11 @@ const toggleRowExpansion = async (row: EmptyObjectType, column: Object, expanded
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	let editArr: EmptyArrayType = [];
 	let keyEdit: EmptyArrayType = [];
-	let { runId, yearStr, deptCode, deptName } = ruleForm;
+	// console.log(ruleForm);
+
+	// let { yearStr } = state.tableData.form;
+	let { runId, deptCode, deptName } = ruleForm;
+	let { YearStr } = state.tableData.form;
 	for (let key in ruleForm) {
 		if (key.includes('-')) {
 			keyEdit.push(key);
@@ -199,7 +214,7 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	}
 	const montArr = ['janNum', 'febNum', 'marNum', 'aprNum', 'mayNum', 'junNum', 'julNum', 'augNum', 'septNum', 'octNum', 'novNum', 'decNum'];
 	for (let j = 1; j <= 3; j++) {
-		editArr.push({ runId, yearStr, deptCode, deptName });
+		editArr.push({ runId, deptCode, deptName, YearStr });
 		montArr.forEach((m) => {
 			editArr[j - 1][m] = ruleForm[`${m}-${j}`];
 			editArr[j - 1].identitytype = j;
@@ -208,6 +223,8 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 
 	loadingBtn.value = true;
 	try {
+		// console.log(editArr);
+
 		const res = await postDemandUpdateApi(editArr);
 		if (res.status) {
 			ElMessage.success(t(`message.hint.modifiedSuccess`));
@@ -240,8 +257,10 @@ const onSortHeader = (data: TableHeaderType[]) => {
 // 處理樹結構數據
 const treeData = (datas: EmptyArrayType) => {
 	datas.forEach((item) => {
+		item.editIsShow = item.canEdit === 'Y' ? false : true;
 		item.label = item.deptName;
 		item.value = item.deptCode;
+		item.children = item.details;
 		if (item.children) {
 			treeData(item.children);
 		}
@@ -250,7 +269,7 @@ const treeData = (datas: EmptyArrayType) => {
 };
 // 得到部門下拉樹表格
 const getBuTreeSelectData = async () => {
-	const res = await getDeptInfoGetOrganizeFrameApi();
+	const res = await getDeptInfoGetKPIOrganizeApi();
 	const data = treeData(res.data);
 	state.tableData.search[0].optionsData = data;
 };
@@ -304,7 +323,7 @@ const getHearder = () => {
 				isCheck: true,
 				placeholder: '',
 				required: false,
-				precision: 2,
+				precision: 0,
 				sm: 7,
 				md: 7,
 				lg: 7,

@@ -9,11 +9,13 @@
 					class="table"
 					@sortHeader="onSortHeader"
 					@onTableInfiniteScroll="tableInfiniteScroll"
+					@onOpenOtherDialog="setCurrent"
 					@delRow="onTableDelRow"
 					@pageChange="onTablePageChange"
 					@exportTable="onExportTable"
 					:row-style="tableRowClassName"
-					:objectSpanMethod="arraySpanMethod"
+					@openAdd="openDialog"
+					@getSummaries="comSum"
 				>
 				</Table>
 			</el-form>
@@ -25,13 +27,15 @@
 				@addData="addData"
 				:loadingBtn="loadingBtn"
 				dialogWidth="40%"
+				@downloadTemp="downloadTemp"
+				@importTableData="submitUpload"
 			>
 			</Dialog>
 		</div>
 	</div>
 </template>
 
-<script setup lang="ts" name="massProGrowthRatio">
+<script setup lang="ts" name="SMTmassProConverFactor">
 import { defineAsyncComponent, reactive, ref, onMounted, h, VNode } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
@@ -39,7 +43,14 @@ import { useI18n } from 'vue-i18n';
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const TableSearch = defineAsyncComponent(() => import('/@/components/search/search.vue'));
 const Dialog = defineAsyncComponent(() => import('/@/components/dialog/dialog.vue'));
-import { getMasspropApi, postMasspropUpdateApi, postMasspropExportApi } from '/@/api/growthSet/massProGrowthRatio';
+
+import {
+	getSMTMasscoeffApi,
+	postSMTMasscoeffUpdateApi,
+	postSMTMasscoeffExportApi,
+	postSMTMasscoeffImportExcelApi,
+	postSMTMasscoeffSetBaseProjectApi,
+} from '/@/api/growthSet/SMTmassProConverFactor';
 // 定义变量内容
 const { t } = useI18n();
 const tableRef = ref<RefType>();
@@ -58,19 +69,9 @@ const state = reactive<TableDemoState>({
 		// 表头内容（必传，注意格式）
 		header: [
 			{ key: 'projectName', colWidth: '', title: '機種', type: 'text', isCheck: true, isTableIcon: true, isRequired: true },
-			{ key: 'summary', colWidth: '', title: '合計', type: 'text', isCheck: true, isTableIcon: true, isRequired: true },
-			{ key: 'janNum', colWidth: '', title: '1月', type: 'text', isCheck: true },
-			{ key: 'febNum', colWidth: '', title: '2月', type: 'text', isCheck: true },
-			{ key: 'marNum', colWidth: '', title: '3月', type: 'text', isCheck: true },
-			{ key: 'aprNum', colWidth: '', title: '4月', type: 'text', isCheck: true },
-			{ key: 'mayNum', colWidth: '', title: '5月', type: 'text', isCheck: true },
-			{ key: 'junNum', colWidth: '', title: '6月', type: 'text', isCheck: true },
-			{ key: 'julNum', colWidth: '', title: '7月', type: 'text', isCheck: true },
-			{ key: 'augNum', colWidth: '', title: '8月', type: 'text', isCheck: true },
-			{ key: 'septNum', colWidth: '', title: '9月', type: 'text', isCheck: true },
-			{ key: 'octNum', colWidth: '', title: '10月', type: 'text', isCheck: true },
-			{ key: 'novNum', colWidth: '', title: '11月', type: 'text', isCheck: true },
-			{ key: 'decNum', colWidth: '', title: '12月', type: 'text', isCheck: true },
+			{ key: 'devstandnum', colWidth: '', title: '設備標配數量', type: 'text', isCheck: true },
+			{ key: 'linecapacity', colWidth: '', title: '單線日產能', type: 'text', isCheck: true },
+			{ key: 'coeffnum', colWidth: '', title: '折算係數', type: 'text', isCheck: true },
 		],
 		// 配置项（必传）
 		config: {
@@ -79,43 +80,75 @@ const state = reactive<TableDemoState>({
 			isBorder: false, // 是否显示表格边框
 			isSerialNo: false, // 是否显示表格序号
 			isSelection: false, // 是否显示表格多选
-			isOperate: false, // 是否显示表格操作栏
+			isOperate: true, // 是否显示表格操作栏
 			isButton: true, //是否显示表格上面的新增删除按钮
 			isInlineEditing: false, //是否是行内编辑
 			isTopTool: true, //是否有表格右上角工具
 			isPage: false, //是否有分页
-			operateWidth: 200, //操作栏宽度，如果操作栏有几个按钮就自己定宽度
-			height: 710,
+			operateWidth: 230, //操作栏宽度，如果操作栏有几个按钮就自己定宽度
+			height: 740,
+			// isShowSummary: true,
 			exportIcon: true,
-			isHidenExportIcon: true,
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
 		search: [
-			{
-				label: 'BU',
-				prop: 'buCode',
-				required: false,
-				type: 'select',
-				placeholder: '',
-				options: [
-					{ value: 'CMA', label: 'CMA', text: 'CMA', selected: true },
-					{ value: 'DP', label: 'DP', text: 'DP' },
-					{ value: 'CMB', label: 'CMB', text: 'CMB' },
-					{ value: 'CMC', label: 'CMC', text: 'CMC' },
-				],
-				noclearable: true,
-			},
+			// {
+			// 	label: 'BU',
+			// 	prop: 'buCode',
+			// 	required: false,
+			// 	type: 'select',
+			// 	placeholder: '',
+			// 	options: [
+			// 		{ value: 'CMA', label: 'CMA', text: 'CMA', selected: true },
+			// 		{ value: 'DP', label: 'DP', text: 'DP' },
+			// 		{ value: 'CMB', label: 'CMB', text: 'CMB' },
+			// 		{ value: 'CMC', label: 'CMC', text: 'CMC' },
+			// 	],
+			// 	noclearable: true,
+			// },
 			{ label: '年度', prop: 'yyyy', required: false, type: 'date', placeholder: '', dateType: 'year', valueFormat: 'YYYY', noclearable: true },
 		],
 		searchConfig: {
 			isSearchBtn: true,
 		},
 		topBtnConfig: [],
-		btnConfig: [],
+		btnConfig: [
+			{ type: 'other', name: '選定為基準機種', isSure: false, color: '#67c23a', icon: '' },
+			{ type: 'edit', name: '修改', isSure: false, color: '#438df5', icon: '' },
+			// { type: 'del', name: 'message.allButton.deleteBtn', defaultColor: 'danger', icon: 'ele-Delete' },
+		],
 		// 弹窗表单
-		dialogConfig: [],
+		dialogConfig: [
+			{ label: '機種', prop: 'projectName', placeholder: '', required: false, type: 'text', sm: 24, md: 24, lg: 24, xl: 24, isCheck: true },
+			{
+				label: '設備標配數量',
+				prop: 'devstandnum',
+				placeholder: '',
+				required: true,
+				type: 'number',
+				sm: 24,
+				md: 24,
+				lg: 24,
+				xl: 24,
+				isCheck: true,
+				precision: 1,
+			},
+			{
+				label: '單線日產能',
+				prop: 'linecapacity',
+				placeholder: '',
+				required: true,
+				type: 'number',
+				sm: 24,
+				md: 24,
+				lg: 24,
+				xl: 24,
+				isCheck: true,
+				precision: 1,
+			},
+		],
 		// 给后端的数据
-		form: { buCode: 'CMA', yyyy: new Date().getFullYear().toString() },
+		form: { yyyy: new Date().getFullYear().toString() },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -125,16 +158,7 @@ const state = reactive<TableDemoState>({
 		printName: '表格打印演示',
 	},
 });
-// 合併單元格
-const arraySpanMethod = ({ row, column, rowIndex, columnIndex }: SpanMethodProps) => {
-	if (rowIndex === 0) {
-		if (columnIndex === 0) {
-			return [1, 2];
-		} else if (columnIndex === 1) {
-			return [0, 0];
-		}
-	}
-};
+
 // 初始化列表数据
 const getTableData = async () => {
 	state.tableData.config.loading = true;
@@ -142,36 +166,44 @@ const getTableData = async () => {
 	let data: EmptyObjectType = {};
 	data = {
 		...form,
+		// ...state.tableData.page,
 	};
-	const res = await getMasspropApi(data);
-	// let myData = [{}];
-	// res.data.forEach((item: any) => {
-	// 	item.planDetail.forEach((i: any) => {
-	// 		item['mm-' + i.mm] = i.numerical;
-	// 	});
-	// });
-	// state.tableData.tempTableData = res.data;
-	// state.tableData.data = res.data.slice(0, 15);
-	state.tableData.data = res.data;
-
-	// state.tableData.config.total = res.data.length;
+	const res = await getSMTMasscoeffApi(data);
+	state.tableData.tempTableData = res.data;
+	state.tableData.data = res.data.slice(0, 15);
+	state.tableData.config.total = res.data.length;
 	if (res.status) {
 		state.tableData.config.loading = false;
 	}
-	// tableRef.value?.infiniteScrollReset();
+	tableRef.value?.infiniteScrollReset();
 };
 // 觸底
-const tableInfiniteScroll = (page, data) => {
+const tableInfiniteScroll = (page: number, data: EmptyObjectType) => {
 	state.tableData.data = state.tableData.data.concat(data);
 };
-
+// 下載模板
+const downloadTemp = () => {
+	window.open(
+		`${import.meta.env.MODE === 'development' ? import.meta.env.VITE_API_URL : window.webConfig.webApiBaseUrl}/doc/Masscoeff.xlsx`,
+		'_blank'
+	);
+};
+// 上传文件
+const submitUpload = async (formEl: EmptyObjectType | undefined) => {
+	const res = await postSMTMasscoeffImportExcelApi(formEl!.raw);
+	if (res.status) {
+		ElMessage.success('上傳成功');
+		dialogRef.value.closeDialog();
+		getTableData();
+	}
+};
 // 下載
 const onExportTable = async () => {
 	const form = state.tableData.form;
 	let data: EmptyObjectType = {
 		...form,
 	};
-	const res = await postMasspropExportApi(data);
+	const res = await postSMTMasscoeffExportApi(data);
 	const result: any = res.data;
 	let blob = new Blob([result], {
 		// 这里一定要和后端对应，不然可能出现乱码或者打不开文件
@@ -187,26 +219,73 @@ const onExportTable = async () => {
 	window.URL.revokeObjectURL(link.href);
 };
 const tableRowClassName = ({ row, rowIndex }: any) => {
-	// if (rowIndex === state.tableData.data.length - 2) {
-	// 	return { position: 'sticky', bottom: '48px', 'background-color': '#f5f7fa', 'z-index': 100 };
+	if (row.baseflag == 'Y') {
+		return { 'background-color': '#ffc000', 'font-weight': 700 };
+	}
+	// if (rowIndex === state.tableData.data.length - 1) {
+	// 	// 固定最後一行
+	// 	return { position: 'sticky', bottom: 0, 'background-color': '#f5f7fa', 'z-index': 100 };
 	// }
-	if (rowIndex == 0) {
-		return { position: 'sticky', top: 0, 'background-color': '#edf192', 'z-index': 100 };
-	}
-	if (rowIndex === state.tableData.data.length - 1) {
-		// 固定最後一行
-		return { position: 'sticky', bottom: 0, 'background-color': '#f5f7fa', 'z-index': 100 };
-	}
+};
+// 選中行
+const setCurrent = (scope: EmptyObjectType) => {
+	ElMessageBox.confirm(`是否選擇 <span style="color:red">${scope.row.projectName}</span> 此專案為基準機種？`, t('message.hint.tips'), {
+		confirmButtonText: t('message.allButton.ok'),
+		cancelButtonText: t('message.allButton.cancel'),
+		type: 'warning',
+		draggable: true,
+		dangerouslyUseHTMLString: true, // 注意此属性
+		closeOnClickModal: false,
+	})
+		.then(async () => {
+			const res = await postSMTMasscoeffSetBaseProjectApi({ ...scope.row, baseflag: 'Y' });
+			getTableData();
+		})
+		.catch(() => {});
 };
 
-// 打开新增編輯弹窗
+// 合計
+const comSum = (param: EmptyObjectType, sums: any) => {
+	const { columns, data } = param;
+	columns.forEach((column: EmptyObjectType, index: number) => {
+		// if (index === 0) {
+		// 	sums[index] = h('div', { style: { 'backgound-color': '#000' } }, [h('div', '月小計'), h('div', '同比累計')]);
+		// 	return;
+		// }
+		// if (index === 1) {
+		// 	sums[index] = h('div', [h('div', 1), h('div', 2)]);
+		// 	return;
+		// }
+		if (index === 0) {
+			sums[index] = h('div', ['轉案數量合計']);
+			return;
+		}
+		if (column.property === 'convernumc') {
+			const values = data.map((item: any) => Number(item[column.property]));
+			if (!values.every((value: any) => Number.isNaN(value))) {
+				sums[index] = `${values.reduce((prev: any, curr: any) => {
+					const value = Number(curr);
+					if (!Number.isNaN(value)) {
+						return parseFloat((prev + curr).toFixed(2));
+					} else {
+						return prev;
+					}
+				}, 0)}`;
+			}
+		} else {
+			sums[index] = ' ';
+		}
+	});
+};
+// 打开編輯弹窗
 const openDialog = async (type: string, row: EmptyObjectType) => {
+	isFootBtn.value = type === 'imp' ? false : true;
 	dialogRef.value.openDialog(type, row, '');
 };
 //新增修改數據
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	loadingBtn.value = true;
-	const res = await postMasspropUpdateApi(ruleForm);
+	const res = await postSMTMasscoeffUpdateApi(ruleForm);
 	if (res.status) {
 		ElMessage.success(t(`message.hint.modifiedSuccess`));
 		dialogRef.value.closeDialog();
@@ -216,7 +295,7 @@ const addData = async (ruleForm: EmptyObjectType, type: string) => {
 };
 // 表格删除当前项回调
 const onTableDelRow = async (row: EmptyObjectType, type: string) => {
-	// const res = await postProjectInfoDeleteApi(row);
+	// const res = await postTrialcoeffDeleteApi(row);
 	// if (res.status) {
 	// 	ElMessage.success(`${t('message.allButton.deleteBtn')} ${t('message.hint.success')}`);
 	// 	getTableData();

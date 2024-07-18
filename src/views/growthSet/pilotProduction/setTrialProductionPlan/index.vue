@@ -163,7 +163,7 @@ const state = reactive<TableDemoState>({
 			},
 		],
 		// 给后端的数据
-		form: { yyyy: '2024', buCode: 'CMA' },
+		form: { yyyy: new Date().getFullYear().toString(), buCode: 'CMA' },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -191,7 +191,7 @@ const getTableData = async () => {
 	state.tableData.tempTableData = res.data;
 	state.tableData.data = res.data.slice(0, 15);
 
-	state.tableData.config.total = state.tableData.data.length;
+	state.tableData.config.total = res.data.length;
 	if (res.status) {
 		state.tableData.config.loading = false;
 	}

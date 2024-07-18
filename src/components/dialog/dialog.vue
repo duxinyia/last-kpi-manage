@@ -49,9 +49,11 @@
 									controls-position="right"
 									v-model="state.formData[item.prop]"
 									:min="item.min"
+									:disabled="item.disabled"
 									:precision="item.precision"
 									:step="item.step"
 									:max="item.max"
+									@blur="(e) => handleNumberInputBlur(e, item)"
 									@change="(value:number)=>handleNumberInputChange(value)"
 								/>
 								<span class="ml5">{{ item.unit }}</span>
@@ -164,7 +166,7 @@
 								:clearable="item.clearable || true"
 								v-if="item.type === 'select'"
 								style="width: 100%"
-								:disabled="state.dialog.isdisable || state.formData[`${item.prop}disabled`]"
+								:disabled="item.disabled"
 								@change="(val:any) => selectHandelChange(val,item.prop)"
 								@remove-tag="(val:any) => onRemoveTag(val,item.prop)"
 								:filterable="item.filterable"
@@ -193,11 +195,13 @@
 							<el-switch
 								v-if="item.type === 'switch'"
 								v-model="state.formData[item.prop]"
+								:disabled="item.disabled"
 								inline-prompt
 								:active-text="$t('是')"
 								:inactive-text="$t('否')"
 								active-value="Y"
 								inactive-value="N"
+								@click="($event) => onSwitchChange($event, item.prop)"
 							></el-switch>
 							<el-input
 								:width="224"
@@ -376,11 +380,13 @@ const emit = defineEmits([
 	'otherDialog',
 	'remoteMethod',
 	'handleNumberInputChange',
+	'handleNumberInputBlur',
 	'inputHandleChange',
 	'beforeAvatarUpload',
 	'newInputHandleExceed',
 	'inputBlur',
 	'inputFocus',
+	'switchChange',
 ]);
 // 定义父组件传过来的值
 const props = defineProps({
@@ -477,6 +483,10 @@ const dailogFormButton = () => {
 // 改变number的值
 const handleNumberInputChange = (value: number) => {
 	emit('handleNumberInputChange', value, state.formData);
+};
+// 數字框失去焦點
+const handleNumberInputBlur = (event, item) => {
+	emit('handleNumberInputBlur', event, item.prop, state.formData);
 };
 // 校验表单
 const validatePass = (rule: any, value: any, callback: any, item: EmptyObjectType) => {
@@ -679,6 +689,10 @@ const handleTagClose = (tag: any) => {
 const selectHandelChange = (val: string, prop: string) => {
 	emit('selectChange', val, prop, state.formData);
 };
+// 開關改變
+const onSwitchChange = (event, prop: string) => {
+	emit('switchChange', state.formData[prop], prop, state.formData);
+};
 // 清除
 const onRemoveTag = (val: string, prop: string) => {
 	emit('removeTag', val, prop, state.formData);
@@ -861,12 +875,7 @@ const submitUpload = () => {
 	// closeDialog();
 };
 // 上传图片
-const handleAvatarSuccess: UploadProps['onSuccess'] = async (response, uploadFile) => {
-	// console.log(imagefileList.value[0]);
-	// let arr = imagefileList.value;
-	// imagefileList.value = [];
-	// imagefileList.value.push(arr[arr.length - 1]);
-};
+const handleAvatarSuccess: UploadProps['onSuccess'] = async (response, uploadFile) => {};
 // 图片改变时
 const imageHandleChange: UploadProps['onChange'] = async (uploadFile, uploadFiles) => {
 	imageUrl.value = URL.createObjectURL(uploadFile.raw!);

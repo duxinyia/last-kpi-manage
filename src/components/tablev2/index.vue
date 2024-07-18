@@ -46,7 +46,7 @@ const columns = (item: any) => ({
 	fixed: '',
 	cellRenderer: ({ rowData }: any) => (
 		<div>
-			{item.type === 'date' ? (
+			{item.type === 'date' && (
 				<ElTooltip content={dayjs(rowData[item.key]).format('YYYY/MM/DD')}>
 					{
 						<span class="flex items-center">
@@ -57,9 +57,9 @@ const columns = (item: any) => ({
 						</span>
 					}
 				</ElTooltip>
-			) : null}
-			{item.type === 'tag' ? <ElTag>5</ElTag> : null}
-			{item.type === 'text' ? rowData[item.key] : null}
+			)}
+			{item.type === 'tag' && <ElTag>5</ElTag>}
+			{item.type === 'text' && rowData[item.key]}
 		</div>
 	),
 });

@@ -113,7 +113,7 @@ const state = reactive<TableDemoState>({
 		// 弹窗表单
 		dialogConfig: [],
 		// 给后端的数据
-		form: { buCode: 'CMA', yyyy: '2024' },
+		form: { buCode: 'CMA', yyyy: new Date().getFullYear().toString() },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -176,12 +176,16 @@ const onExportTable = async () => {
 	window.URL.revokeObjectURL(link.href);
 };
 const tableRowClassName = ({ row, rowIndex }: any) => {
-	if (rowIndex === state.tableData.data.length - 2) {
-		return { position: 'sticky', bottom: '48px', 'background-color': '#f5f7fa', 'z-index': 100 };
+	// if (rowIndex === state.tableData.data.length - 2) {
+	// 	return { position: 'sticky', bottom: '48px', 'background-color': '#f5f7fa', 'z-index': 100 };
+	// }
+	// 固定第一行
+	if (rowIndex == 0) {
+		return { position: 'sticky', top: 0, 'background-color': '#edf192', 'z-index': 100 };
 	}
 	if (rowIndex === state.tableData.data.length - 1) {
 		// 固定最後一行
-		return { position: 'sticky', bottom: 0, 'background-color': '#edf192', 'z-index': 100 };
+		return { position: 'sticky', bottom: 0, 'background-color': '#f5f7fa', 'z-index': 100 };
 	}
 };
 

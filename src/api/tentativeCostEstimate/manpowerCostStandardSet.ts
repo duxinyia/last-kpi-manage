@@ -56,6 +56,13 @@ export function postLaborcostImportExcelApi(file:any) {
     }
   });
 }
+// 人員類別下拉框
+export function getIdentitytypeApi() {
+  return request({
+    url: `/api/Laborcost/GetIdentitytype`,
+    method: 'GET',
+  });
+}
 
 
 

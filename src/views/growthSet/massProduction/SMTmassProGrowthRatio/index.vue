@@ -30,8 +30,8 @@
 		</div>
 	</div>
 </template>
-
-<script setup lang="ts" name="massProGrowthRatio">
+<!-- SMT量產成長比例 -->
+<script setup lang="ts" name="SMTmassProGrowthRatio">
 import { defineAsyncComponent, reactive, ref, onMounted, h, VNode } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
@@ -39,7 +39,7 @@ import { useI18n } from 'vue-i18n';
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const TableSearch = defineAsyncComponent(() => import('/@/components/search/search.vue'));
 const Dialog = defineAsyncComponent(() => import('/@/components/dialog/dialog.vue'));
-import { getMasspropApi, postMasspropUpdateApi, postMasspropExportApi } from '/@/api/growthSet/massProGrowthRatio';
+import { getSMTMasspropApi, postSMTMasspropUpdateApi, postSMTMasspropExportApi } from '/@/api/growthSet/SMTmassProGrowthRatio';
 // 定义变量内容
 const { t } = useI18n();
 const tableRef = ref<RefType>();
@@ -91,20 +91,20 @@ const state = reactive<TableDemoState>({
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
 		search: [
-			{
-				label: 'BU',
-				prop: 'buCode',
-				required: false,
-				type: 'select',
-				placeholder: '',
-				options: [
-					{ value: 'CMA', label: 'CMA', text: 'CMA', selected: true },
-					{ value: 'DP', label: 'DP', text: 'DP' },
-					{ value: 'CMB', label: 'CMB', text: 'CMB' },
-					{ value: 'CMC', label: 'CMC', text: 'CMC' },
-				],
-				noclearable: true,
-			},
+			// {
+			// 	label: 'BU',
+			// 	prop: 'buCode',
+			// 	required: false,
+			// 	type: 'select',
+			// 	placeholder: '',
+			// 	options: [
+			// 		{ value: 'CMA', label: 'CMA', text: 'CMA', selected: true },
+			// 		{ value: 'DP', label: 'DP', text: 'DP' },
+			// 		{ value: 'CMB', label: 'CMB', text: 'CMB' },
+			// 		{ value: 'CMC', label: 'CMC', text: 'CMC' },
+			// 	],
+			// 	noclearable: true,
+			// },
 			{ label: '年度', prop: 'yyyy', required: false, type: 'date', placeholder: '', dateType: 'year', valueFormat: 'YYYY', noclearable: true },
 		],
 		searchConfig: {
@@ -115,7 +115,7 @@ const state = reactive<TableDemoState>({
 		// 弹窗表单
 		dialogConfig: [],
 		// 给后端的数据
-		form: { buCode: 'CMA', yyyy: new Date().getFullYear().toString() },
+		form: { yyyy: new Date().getFullYear().toString() },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -143,7 +143,7 @@ const getTableData = async () => {
 	data = {
 		...form,
 	};
-	const res = await getMasspropApi(data);
+	const res = await getSMTMasspropApi(data);
 	// let myData = [{}];
 	// res.data.forEach((item: any) => {
 	// 	item.planDetail.forEach((i: any) => {
@@ -171,7 +171,7 @@ const onExportTable = async () => {
 	let data: EmptyObjectType = {
 		...form,
 	};
-	const res = await postMasspropExportApi(data);
+	const res = await postSMTMasspropExportApi(data);
 	const result: any = res.data;
 	let blob = new Blob([result], {
 		// 这里一定要和后端对应，不然可能出现乱码或者打不开文件
@@ -206,7 +206,7 @@ const openDialog = async (type: string, row: EmptyObjectType) => {
 //新增修改數據
 const addData = async (ruleForm: EmptyObjectType, type: string) => {
 	loadingBtn.value = true;
-	const res = await postMasspropUpdateApi(ruleForm);
+	const res = await postSMTMasspropUpdateApi(ruleForm);
 	if (res.status) {
 		ElMessage.success(t(`message.hint.modifiedSuccess`));
 		dialogRef.value.closeDialog();

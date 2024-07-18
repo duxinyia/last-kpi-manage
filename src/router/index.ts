@@ -112,7 +112,7 @@ router.beforeEach(async (to, from, next) => {
 			Session.clear();
 			Local.clear()
 			NProgress.done();
-		} else if (token &&( to.path === '/login'||to.path === '/')) {
+		} else if (token &&( to.path === '/login'||to.path === '/')) {	
 			next('/basicsSet/departmentParameter');	
 			NProgress.done();
 		} 

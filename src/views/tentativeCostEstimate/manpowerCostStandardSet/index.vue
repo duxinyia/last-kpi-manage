@@ -27,6 +27,7 @@ import { defineAsyncComponent, reactive, ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import {
+	getIdentitytypeApi,
 	getLaborcoststandardsApi,
 	postLaborcostAddApi,
 	postLaborcostDeleteApi,
@@ -52,7 +53,20 @@ const state = reactive<TableDemoState>({
 		tempTableData: [],
 		// 表头内容（必传，注意格式）
 		header: [
-			{ key: 'identitytype', colWidth: '', title: '人員類別', type: 'text', isCheck: true, isTableIcon: true, isRequired: true },
+			{
+				key: 'identitytype',
+				colWidth: '',
+				title: '人員類別',
+				type: 'text',
+				isCheck: true,
+				isTableIcon: true,
+				isRequired: true,
+				transfer: {
+					1: '陸幹師級',
+					2: '陸幹員級',
+					3: '臺外幹',
+				},
+			},
 			{ key: 'monsalary', colWidth: '', title: '月薪資(KNTD)', type: 'text', isCheck: true },
 		],
 		// 配置项（必传）
@@ -90,13 +104,14 @@ const state = reactive<TableDemoState>({
 				prop: 'identitytype',
 				placeholder: '',
 				required: true,
-				type: 'input',
+				type: 'select',
 				xs: 24,
 				sm: 24,
 				md: 24,
 				lg: 24,
 				xl: 24,
 				isCheck: true,
+				options: [],
 			},
 			{
 				label: '月薪資(KNTD)',
@@ -200,10 +215,20 @@ const onSearch = (data: EmptyObjectType) => {
 const onSortHeader = (data: TableHeaderType[]) => {
 	state.tableData.header = data;
 };
-
+// 下拉框数据
+const getSelect = async () => {
+	const res = await getIdentitytypeApi();
+	const option = res.data.map((item: any) => {
+		return { label: item.description, text: item.description, value: item.value };
+	});
+	if (state.tableData.dialogConfig) {
+		state.tableData.dialogConfig[0].options = option;
+	}
+};
 // 页面加载时
 onMounted(() => {
 	getTableData();
+	getSelect();
 });
 </script>
 

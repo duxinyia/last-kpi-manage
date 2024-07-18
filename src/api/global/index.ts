@@ -32,3 +32,11 @@ export function getUploadFile2S3Api(ProjectName:string,ProjectCode:string,Produc
     }
   });
 }
+// 部門下拉框
+export function getDeptInfoGetKPIOrganizeApi() {
+  return request({
+    url: `/api/DeptInfo/GetKPIOrganize`,
+    method: 'GET',
+  });
+}
+

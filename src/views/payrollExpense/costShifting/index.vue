@@ -1,7 +1,7 @@
 <template>
 	<div class="table-container layout-padding">
 		<div class="table-padding layout-padding-view layout-padding-auto">
-			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" />
+			<TableSearch :search="state.tableData.search" @search="onSearch" :searchConfig="state.tableData.searchConfig" :form="state.tableData.form" />
 			<Table
 				ref="tableRef"
 				v-bind="state.tableData"
@@ -33,7 +33,7 @@
 import { defineAsyncComponent, reactive, ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
-import { getDeptInfoGetOrganizeFrameApi } from '/@/api/basicsSet/departmentParameter';
+import { getDeptInfoGetKPIOrganizeApi } from '/@/api/global';
 import { getCostShiftApi, postCostShiftUpdateApi, postCostShiftExportApi, postCostShiftImportExcelApi } from '/@/api/payrollExpense/costShifting';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
@@ -87,8 +87,8 @@ const state = reactive<TableDemoState>({
 		},
 		// 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
 		search: [
-			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '' },
-			{ label: '年度', prop: 'YearStr', required: false, type: 'date', placeholder: '', dateType: 'year', valueFormat: 'YYYY' },
+			{ label: '部門', prop: 'DeptId', required: false, type: 'treeSelect', optionsData: [], placeholder: '', noclearable: true },
+			{ label: '年度', prop: 'YearStr', required: false, type: 'date', placeholder: '', dateType: 'year', valueFormat: 'YYYY', noclearable: true },
 		],
 		searchConfig: {
 			isSearchBtn: true,
@@ -112,7 +112,7 @@ const state = reactive<TableDemoState>({
 			{ label: '12月', prop: 'decNum', placeholder: '', required: false, type: 'number', isCheck: true },
 		],
 		// 给后端的数据
-		form: {},
+		form: { DeptId: 'A00001', YearStr: new Date().getFullYear().toString() },
 		// 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
 		page: {
 			pageNum: 1,
@@ -165,6 +165,7 @@ const onExportTable = async () => {
 const tData = (datas: EmptyArrayType) => {
 	let len = 0;
 	datas.forEach((item) => {
+		item.editIsShow = item.canEdit === 'Y' ? false : true;
 		item.children = item.details;
 		if (item.children.length > 0) {
 			item.tableIcon = 'ele-FolderOpened';
@@ -230,8 +231,10 @@ const onSortHeader = (data: TableHeaderType[]) => {
 // 處理樹結構數據
 const treeData = (datas: EmptyArrayType) => {
 	datas.forEach((item) => {
+		item.editIsShow = item.canEdit === 'Y' ? false : true;
 		item.label = item.deptName;
 		item.value = item.deptCode;
+		item.children = item.details;
 		if (item.children) {
 			treeData(item.children);
 		}
@@ -240,7 +243,7 @@ const treeData = (datas: EmptyArrayType) => {
 };
 // 得到部門下拉樹表格
 const getBuTreeSelectData = async () => {
-	const res = await getDeptInfoGetOrganizeFrameApi();
+	const res = await getDeptInfoGetKPIOrganizeApi();
 	const data = treeData(res.data);
 	state.tableData.search[0].optionsData = data;
 };

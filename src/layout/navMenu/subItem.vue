@@ -14,7 +14,7 @@
 			<el-menu-item :index="val.path" :key="val.path">
 				<template v-if="!val.meta.isLink || (val.meta.isLink && val.meta.isIframe)">
 					<!-- <SvgIcon :name="val.meta.icon" /> -->
-					<SvgIcon class="mr10" :name="`icon-${val.meta.icon}`" color="#fff" />
+					<SvgIcon v-if="val.meta.icon && val.meta.icon != '#'" class="mr10" :name="`icon-${val.meta.icon}`" color="#fff" />
 					<span>{{ val.meta.titleEn ? $t(val.meta.titleEn) : val.meta.title }}</span>
 				</template>
 				<template v-else>

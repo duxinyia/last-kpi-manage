@@ -1,16 +1,16 @@
 import request from '/@/utils/request';
 // 查询
-export function getExamsetestApi(data:EmptyObjectType) {
+export function getExamsetstageApi(data:EmptyObjectType) {
   return request({
-    url: `/api/Reportinfo/GetExamsetest`,
+    url: `/api/Reportinfo/GetExamsetstage`,
     method: 'GET',
     params:data
   });
 }
 // 計算
-export function getExamsetstageApi(data:EmptyObjectType) {
+export function getCalculateExamsetstageApi(data:EmptyObjectType) {
   return request({
-    url: `/api/Reportinfo/GetExamsetstage`,
+    url: `/api/Reportinfo/CalculateExamsetstage`,
     method: 'GET',
     params:data
   });
@@ -31,7 +31,6 @@ export function getPreviewExamsetstageApi(data:EmptyObjectType) {
     params:data
   });
 }
-
 
 
 
